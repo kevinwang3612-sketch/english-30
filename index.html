@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e7c6b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>30 天英語跟讀卡</title>
+<style>
+/* Layout: gradient ground → header with stats → day picker → study card (left) + notebook (right) → export footer */
+:root {
+  --bg1: #dcf1ec; --bg2: #fce6d4;
+  --surface: #ffffff; --surface-2: #f2f7f6; --line: #d6e3e0;
+  --ink: #14302b; --muted: #587069;
+  --accent: #0e7c6b; --accent-hover: #0a6b5c; --accent-ink: #ffffff; --accent-soft: #d3eee8;
+  --good: #15803d; --good-bg: #dcfce7;
+  --warn: #9a6200; --warn-bg: #fef3c7;
+  --bad: #b91c1c; --bad-bg: #fee2e2;
+  --shadow: 0 12px 32px rgba(18, 64, 56, .12);
+  --font-ui: "Segoe UI", system-ui, -apple-system, "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
+  --font-word: "Segoe UI Semibold", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --font-ipa: "Segoe UI", "Lucida Sans Unicode", "Arial Unicode MS", "Charis SIL", "Doulos SIL", sans-serif;
+  --radius: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg1: #0c1d1b; --bg2: #1f1a26;
+    --surface: #142628; --surface-2: #1a3033; --line: #2a4346;
+    --ink: #e4f1ee; --muted: #9ab2ad;
+    --accent: #37c4a9; --accent-hover: #52d6bc; --accent-ink: #062019; --accent-soft: #173f39;
+    --good: #4ade80; --good-bg: #12351f;
+    --warn: #facc15; --warn-bg: #3a3110;
+    --bad: #f87171; --bad-bg: #3d1717;
+    --shadow: 0 12px 32px rgba(0, 0, 0, .35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg1: #0c1d1b; --bg2: #1f1a26;
+  --surface: #142628; --surface-2: #1a3033; --line: #2a4346;
+  --ink: #e4f1ee; --muted: #9ab2ad;
+  --accent: #37c4a9; --accent-hover: #52d6bc; --accent-ink: #062019; --accent-soft: #173f39;
+  --good: #4ade80; --good-bg: #12351f;
+  --warn: #facc15; --warn-bg: #3a3110;
+  --bad: #f87171; --bad-bg: #3d1717;
+  --shadow: 0 12px 32px rgba(0, 0, 0, .35);
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; min-height: 100vh;
+  font-family: var(--font-ui); font-size: 15px; line-height: 1.6; color: var(--ink);
+  background-color: var(--bg1);
+  background-image: linear-gradient(155deg, var(--bg1) 0%, var(--bg2) 100%);
+  background-attachment: fixed;
+}
+.app { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 40px; display: flex; flex-direction: column; gap: 16px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+h1 { font-size: clamp(24px, 4vw, 32px); font-weight: 800; letter-spacing: -.01em; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; flex: 1 1 420px; max-width: 560px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px 12px; min-width: 0; }
+.stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1.3; }
+.stat span { font-size: 12px; color: var(--muted); }
+.progress { height: 8px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
+.progress .bar { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .4s ease; }
+
+/* panels */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.panel h3 { font-size: 16px; display: flex; align-items: center; gap: 8px; }
+
+/* buttons */
+.btn {
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 14px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--surface-2); color: var(--ink);
+  transition: transform .12s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.btn:hover { transform: translateY(-1px); border-color: var(--accent); box-shadow: 0 4px 12px rgba(14, 124, 107, .18); }
+.btn:active { transform: translateY(0); }
+.btn:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { background: var(--accent-hover); }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 5px 10px; font-size: 13px; }
+.btn.icon { width: 40px; padding: 8px 0; font-size: 18px; }
+.btn.is-on { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+.btn.is-playing { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.danger:hover { border-color: var(--bad); color: var(--bad); box-shadow: none; }
+
+/* day picker */
+.daybar { display: flex; flex-direction: column; gap: 12px; }
+.daybar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+select, input[type="text"] {
+  font: inherit; color: var(--ink); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; min-width: 0;
+}
+#daySelect { flex: 1 1 220px; font-weight: 600; cursor: pointer; }
+.chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 6px; }
+.chip {
+  font: inherit; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer;
+  height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted);
+  position: relative; transition: transform .12s ease, border-color .15s ease;
+}
+.chip:hover { transform: translateY(-1px); border-color: var(--accent); color: var(--ink); }
+.chip.touched::after { content: ""; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
+.chip.done { background: var(--accent-soft); color: var(--ink); border-color: transparent; }
+.chip.done::after { content: "✓"; background: none; width: auto; height: auto; top: 0; right: 4px; font-size: 11px; color: var(--accent); }
+.chip[aria-current="true"] { border: 2px solid var(--accent); color: var(--ink); }
+
+/* layout */
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* study card */
+.card { background: var(--surface); border-radius: 24px; box-shadow: var(--shadow); padding: clamp(18px, 3.5vw, 32px); display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.card-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.daytag { font-size: 13px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 3px 10px; border-radius: 99px; }
+.counter { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.card-top .btn { margin-left: auto; }
+.word-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; }
+.word { font-family: var(--font-word); font-size: clamp(36px, 7vw, 54px); line-height: 1.05; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.kk { font-family: var(--font-ipa); font-size: 18px; color: var(--muted); }
+.pos { font-size: 13px; font-weight: 700; font-style: italic; color: var(--accent); border: 1px solid var(--accent); padding: 0 8px; border-radius: 8px; }
+.zh { font-size: 20px; font-weight: 600; }
+.tts { display: flex; flex-wrap: wrap; gap: 8px; }
+.example { background: var(--surface-2); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sentence { font-size: clamp(18px, 2.6vw, 22px); line-height: 1.5; font-weight: 500; }
+.sentence .w-hit { color: var(--good); }
+.sentence .w-miss { color: var(--bad); text-decoration: underline wavy; text-underline-offset: 4px; }
+.sentence-zh { color: var(--muted); }
+.example .tts { margin-top: 4px; }
+
+/* shadowing */
+.shadow-box { border: 1px dashed var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.mic-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.btn.mic { background: var(--ink); color: var(--surface); border-color: var(--ink); padding: 10px 18px; font-size: 15px; }
+.btn.mic:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.mic.listening { background: var(--bad); border-color: var(--bad); color: #fff; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, .45); } 50% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } }
+.hint { font-size: 13px; color: var(--muted); flex: 1 1 200px; min-width: 0; }
+.hint.error { color: var(--bad); }
+.transcript { min-height: 48px; padding: 10px 14px; border-radius: 12px; background: var(--surface-2); font-size: 16px; overflow-wrap: anywhere; }
+.transcript.placeholder { color: var(--muted); font-size: 14px; }
+.transcript.interim { color: var(--muted); font-style: italic; }
+.result { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; }
+.result.good { background: var(--good-bg); color: var(--good); }
+.result.warn { background: var(--warn-bg); color: var(--warn); }
+.result.bad { background: var(--bad-bg); color: var(--bad); }
+.result .num { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+.result .lab { font-size: 20px; font-weight: 800; }
+.result .sub { font-size: 13px; color: var(--ink); flex-basis: 100%; }
+.typebox summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+.typerow { display: flex; gap: 8px; margin-top: 8px; }
+.typerow input { flex: 1 1 auto; }
+.history { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.card-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dots { display: flex; gap: 6px; }
+.dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.dots span.on { background: var(--accent); width: 22px; border-radius: 99px; }
+
+/* side */
+.side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.count { font-size: 12px; font-weight: 700; background: var(--bad-bg); color: var(--bad); padding: 1px 8px; border-radius: 99px; }
+.hardlist { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto; }
+.hardlist li { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
+.hardlist .go { flex: 1; min-width: 0; text-align: left; background: none; border: 0; padding: 0; font: inherit; color: var(--ink); cursor: pointer; }
+.hardlist .go:hover b { color: var(--accent); }
+.hardlist .go b { display: block; font-size: 15px; }
+.hardlist .go small { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hardlist .rm { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 16px; padding: 4px 6px; border-radius: 8px; }
+.hardlist .rm:hover { color: var(--bad); background: var(--bad-bg); }
+.tag-auto { font-size: 11px; color: var(--warn); font-weight: 700; }
+.empty { font-size: 13px; color: var(--muted); margin-top: 10px; }
+.tips ul { margin: 10px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.tips kbd { font-family: var(--font-ui); font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 0 5px; background: var(--surface-2); color: var(--ink); }
+
+/* export */
+.export { display: flex; flex-direction: column; gap: 12px; }
+.export-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.export-head p { font-size: 13px; color: var(--muted); }
+.export-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px; background: var(--bad-bg); color: var(--bad); font-size: 14px; font-weight: 600; }
+.confirm .btn.primary { background: var(--bad); border-color: var(--bad); color: #fff; }
+textarea#summaryOut { width: 100%; min-height: 220px; font: 13px/1.6 ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; resize: vertical; }
+.env-note { font-size: 12px; color: var(--muted); text-align: center; }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px);
+  background: var(--ink); color: var(--surface); padding: 10px 18px; border-radius: 12px; font-size: 14px; font-weight: 600;
+  opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; max-width: calc(100% - 32px); text-align: center; z-index: 10;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* placement test */
+.study { display: flex; flex-direction: column; gap: 16px; }
+.head-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.lvl-chip { font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; padding: 4px 12px; border-radius: 99px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--ink); }
+.lvl-chip:hover { background: var(--accent); color: var(--accent-ink); }
+.banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; border: 2px solid var(--accent); }
+.banner > div { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.banner p { font-size: 14px; color: var(--muted); }
+.test { max-width: 760px; width: 100%; margin: 0 auto; }
+.test .progress { height: 6px; }
+.passage { background: var(--surface-2); border-radius: 14px; padding: 14px 16px; font-size: 16px; line-height: 1.7; }
+.tq { font-size: clamp(18px, 2.6vw, 22px); font-weight: 600; line-height: 1.5; }
+.tq-zh { font-size: 14px; color: var(--muted); }
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.opts.long { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 560px) { .opts { grid-template-columns: minmax(0, 1fr); } }
+.opt { font: inherit; font-size: 16px; text-align: left; cursor: pointer; padding: 12px 16px; border-radius: 14px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); display: flex; gap: 10px; align-items: baseline; transition: border-color .15s ease, transform .12s ease, background-color .15s ease; }
+.opt:hover { border-color: var(--accent); transform: translateY(-1px); }
+.opt[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.opt .key { font-size: 12px; font-weight: 800; color: var(--muted); flex: none; }
+.test-nav { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.listen-box { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: var(--surface-2); border-radius: 14px; padding: 14px 16px; }
+.listen-box p { font-size: 13px; color: var(--muted); flex: 1 1 200px; }
+.lvl-big { font-size: clamp(44px, 9vw, 72px); font-weight: 800; line-height: 1; color: var(--accent); letter-spacing: -.02em; }
+.res-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 640px) { .res-grid { grid-template-columns: minmax(0, 1fr); } }
+.meter-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.meter { display: grid; grid-template-columns: 3.2em minmax(0, 1fr) 3em; align-items: center; gap: 10px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.meter .track { height: 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.meter .fill { height: 100%; border-radius: 99px; background: var(--accent); }
+.meter .fill.low { background: var(--bad); }
+.meter .fill.mid { background: var(--warn); }
+.meter b { font-weight: 700; }
+.meter span:last-child { text-align: right; color: var(--muted); }
+.advice { background: var(--accent-soft); border-radius: 14px; padding: 14px 16px; font-size: 15px; }
+.wrong-list { margin: 8px 0 0; padding-left: 18px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
+.wrong-list small { color: var(--muted); }
+
+/* sync */
+.sync-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) { .sync-grid { grid-template-columns: minmax(0, 1fr); } }
+.sync-box { background: var(--surface-2); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.sync-box h4 { margin: 0; font-size: 15px; }
+.sync-box p, .sync-box li { font-size: 13px; color: var(--muted); }
+.sync-box ol { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; }
+.sync-box textarea { width: 100%; min-height: 90px; font: 12px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px; resize: vertical; word-break: break-all; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field span { font-size: 12px; font-weight: 700; color: var(--muted); }
+.field input { width: 100%; }
+.sync-status { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.sync-status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--line); flex: none; }
+.sync-status.ok::before { background: var(--good); }
+.sync-status.busy::before { background: var(--warn); }
+.sync-status.err { color: var(--bad); }
+.sync-status.err::before { background: var(--bad); }
+code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-radius: 6px; word-break: break-all; }
+
+@media (max-width: 560px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .card-nav .btn { padding: 8px 10px; }
+  .tts .btn { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <p class="eyebrow">30-Day English Plan · CEFR B1 · Vocabulary Focus</p>
+      <h1>30 天英語跟讀卡</h1>
+      <div class="head-actions">
+        <button class="btn small" id="ptOpen">🧭 程度測驗</button>
+        <button class="lvl-chip" id="ptChip" hidden></button>
+      </div>
+    </div>
+    <div class="stats" id="stats">
+      <div class="stat"><b id="stDone">0/30</b><span>完成天數</span></div>
+      <div class="stat"><b id="stAvg">–</b><span>平均跟讀分</span></div>
+      <div class="stat"><b id="stAtt">0</b><span>跟讀次數</span></div>
+      <div class="stat"><b id="stHard">0</b><span>錯題本</span></div>
+    </div>
+  </header>
+  <div class="progress" aria-hidden="true"><div class="bar" id="progressBar"></div></div>
+
+  <section class="card test" id="testView" hidden aria-live="polite"></section>
+
+  <div class="study" id="studyView">
+  <div class="panel banner" id="ptBanner">
+    <div>
+      <h3>先測程度，再出題</h3>
+      <p>約 8–10 分鐘，24 題選擇題（字彙、文法、閱讀、聽力）加 2 句口說跟讀。測完會估算 CEFR 等級，並產生可貼給 AI 的出題請求。</p>
+    </div>
+    <button class="btn primary" id="ptStart">開始程度測驗</button>
+  </div>
+
+  <section class="panel daybar" aria-label="天數選擇">
+    <div class="daybar-row">
+      <button class="btn icon" id="prevDay" aria-label="上一天">‹</button>
+      <label class="sr" for="daySelect">選擇天數</label>
+      <select id="daySelect"></select>
+      <button class="btn icon" id="nextDay" aria-label="下一天">›</button>
+      <button class="btn" id="doneBtn">✅ 標記今天完成</button>
+    </div>
+    <div class="chips" id="dayChips"></div>
+  </section>
+
+  <div class="layout">
+    <main class="card" id="card">
+      <div class="card-top">
+        <span class="daytag" id="dayTag">Day 1</span>
+        <span class="counter" id="counter">1 / 4</span>
+        <button class="btn small" id="hardBtn">☆ 加入錯題本</button>
+      </div>
+
+      <div class="word-row">
+        <div>
+          <h2 class="word" id="word">schedule</h2>
+          <div class="meta"><span class="kk" id="kk"></span><span class="pos" id="pos"></span></div>
+        </div>
+        <div class="tts">
+          <button class="btn" data-say="word" data-rate="1">🔊 正常發音</button>
+          <button class="btn" data-say="word" data-rate="0.6">🐢 慢速朗讀</button>
+        </div>
+      </div>
+      <p class="zh" id="zh"></p>
+
+      <div class="example">
+        <p class="label">Example</p>
+        <p class="sentence" id="sentence"></p>
+        <p class="sentence-zh" id="sentenceZh"></p>
+        <div class="tts">
+          <button class="btn" data-say="sentence" data-rate="1">🔊 正常發音</button>
+          <button class="btn" data-say="sentence" data-rate="0.6">🐢 慢速朗讀</button>
+        </div>
+      </div>
+
+      <div class="shadow-box">
+        <div class="mic-row">
+          <button class="btn mic" id="micBtn">🎤 開啟麥克風跟讀</button>
+          <p class="hint" id="micHint">按下後唸出上面的例句，說完會自動評分。</p>
+        </div>
+        <div class="transcript placeholder" id="transcript" aria-live="polite">你唸出的英文會即時顯示在這裡</div>
+        <div class="result" id="result" hidden>
+          <span class="num" id="scoreNum">0%</span>
+          <span class="lab" id="scoreLabel"></span>
+          <span class="sub" id="scoreSub"></span>
+        </div>
+        <details class="typebox">
+          <summary>沒有麥克風？改用打字練習評分</summary>
+          <form class="typerow" id="typeForm">
+            <label class="sr" for="typeInput">輸入例句</label>
+            <input type="text" id="typeInput" autocomplete="off" placeholder="憑記憶輸入例句…">
+            <button class="btn" type="submit">評分</button>
+          </form>
+        </details>
+        <p class="history" id="history"></p>
+      </div>
+
+      <nav class="card-nav" aria-label="卡片切換">
+        <button class="btn" id="prevCard">← 上一張</button>
+        <div class="dots" id="dots"></div>
+        <button class="btn" id="nextCard">下一張 →</button>
+      </nav>
+    </main>
+
+    <aside class="side">
+      <section class="panel">
+        <h3>錯題本 <span class="count" id="hardCount">0</span></h3>
+        <ul class="hardlist" id="hardList"></ul>
+        <p class="empty" id="hardEmpty">按卡片右上角的「☆ 加入錯題本」收藏難詞；跟讀低於 70 分的句子也會自動加入。</p>
+      </section>
+      <section class="panel tips">
+        <h3>使用方式</h3>
+        <ul>
+          <li>每天 4 個單字：先聽、再慢速跟讀、最後開麥克風挑戰。</li>
+          <li>90 分以上 Awesome、70–89 分 Good job、70 分以下 Try again。</li>
+          <li>鍵盤 <kbd>←</kbd> <kbd>→</kbd> 切換卡片。</li>
+          <li>進度自動存在這台電腦的瀏覽器裡。</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+
+  <footer class="panel export">
+    <div class="export-head">
+      <div>
+        <h3>月底學習摘要</h3>
+        <p>包含完成天數、平均跟讀得分、錯題清單與低分例句，可直接貼給 AI 升級題庫。</p>
+      </div>
+      <div class="export-actions">
+        <button class="btn primary" id="copyBtn">📋 複製本月學習摘要</button>
+        <button class="btn ghost danger" id="resetBtn">重設進度</button>
+      </div>
+    </div>
+    <div class="confirm" id="resetConfirm" hidden>
+      <span>確定要清除所有進度、分數與錯題本嗎？此動作無法復原。</span>
+      <button class="btn small primary" id="resetYes">確定清除</button>
+      <button class="btn small" id="resetNo">取消</button>
+    </div>
+    <label class="sr" for="summaryOut">學習摘要內容</label>
+    <textarea id="summaryOut" readonly hidden></textarea>
+  </footer>
+
+  <section class="panel export" aria-labelledby="syncTitle">
+    <div class="export-head">
+      <div>
+        <h3 id="syncTitle">🔄 跨裝置同步</h3>
+        <p>進度原本只存在這台裝置。用進度碼手動搬移，或連上 GitHub Gist 讓手機和電腦自動同步。</p>
+      </div>
+      <p class="sync-status" id="syncStatus">尚未連線雲端同步</p>
+    </div>
+    <div class="sync-grid">
+      <div class="sync-box">
+        <h4>A. 進度碼（手動備份／搬移）</h4>
+        <p>在一台裝置按「匯出」，把整串文字傳到另一台（例如 LINE 傳給自己），再按「匯入」貼上。</p>
+        <div class="export-actions">
+          <button class="btn" id="codeExport">⬆ 匯出進度碼</button>
+          <button class="btn" id="codeImportOpen">⬇ 匯入進度碼</button>
+        </div>
+        <label class="sr" for="codeBox">進度碼</label>
+        <textarea id="codeBox" hidden spellcheck="false" placeholder="在這裡貼上以 ENG30- 開頭的進度碼"></textarea>
+        <div class="export-actions" id="codeImportActions" hidden>
+          <button class="btn primary" id="codeMerge">合併匯入（建議）</button>
+          <button class="btn danger" id="codeReplace">完全取代目前進度</button>
+          <button class="btn ghost" id="codeCancel">取消</button>
+        </div>
+      </div>
+      <div class="sync-box">
+        <h4>B. GitHub Gist 自動同步</h4>
+        <div id="gistSetup">
+          <ol>
+            <li>到 GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token。</li>
+            <li>只勾選 <b>gist</b> 權限，設定到期日後產生，複製 token。</li>
+            <li>貼在下面按「連線」。第二台裝置貼同一組 token 即可，會自動找到同一個 Gist。</li>
+          </ol>
+          <form id="gistForm" class="field" style="gap:8px;margin-top:10px">
+            <label class="field"><span>GitHub Token（只存在這台裝置的瀏覽器）</span>
+              <input type="password" id="gistToken" autocomplete="off" spellcheck="false" placeholder="ghp_…"></label>
+            <label class="field"><span>Gist ID（選填，留空會自動尋找或建立）</span>
+              <input type="text" id="gistIdInput" autocomplete="off" spellcheck="false"></label>
+            <button class="btn primary" type="submit">☁️ 連線並同步</button>
+          </form>
+        </div>
+        <div id="gistConnected" hidden>
+          <p>已連線 Gist：<code class="id" id="gistIdShow"></code></p>
+          <p>每次存檔後約 3 秒自動上傳；打開網頁或切回分頁時自動下載並合併。</p>
+          <div class="export-actions">
+            <button class="btn primary" id="gistSyncNow">立即同步</button>
+            <button class="btn ghost danger" id="gistDisconnect">中斷連線（移除 token）</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  </div>
+  <p class="env-note" id="envNote"></p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 30 天題庫：[單字, KK, 詞性, 中文, 例句, 例句翻譯] ---------- */
+  const DAYS = [
+    { t: "Borrow & Lend 借與還（易混淆）", w: [
+      ["borrow", "ˋbɑro", "v.", "（向別人）借來", "Can I borrow your pen for a minute?", "我可以跟你借一下筆嗎？"],
+      ["lend", "lɛnd", "v.", "借給（別人）", "Could you lend me some money until Friday?", "你可以借我一些錢到星期五嗎？"],
+      ["return", "rɪˋtɝn", "v.", "歸還；返回", "Please return the book to the library by Monday.", "請在星期一前把書還給圖書館。"],
+      ["owe", "o", "v.", "欠（錢、人情）", "I owe you twenty dollars for lunch.", "午餐錢我欠你二十美元。"]]},
+    { t: "Describing Colleagues 描述同事", w: [
+      ["reliable", "rɪˋlaɪəbl̩", "adj.", "可靠的（= dependable）", "She is a reliable worker who never misses a deadline.", "她是個可靠的員工，從不錯過截止期限。"],
+      ["honest", "ˋɑnɪst", "adj.", "誠實的", "Thank you for being honest with me.", "謝謝你對我坦白。"],
+      ["patient", "ˋpeʃənt", "adj.", "有耐心的", "Good teachers are patient with their students.", "好老師對學生很有耐心。"],
+      ["polite", "pəˋlaɪt", "adj.", "有禮貌的", "It is polite to say thank you.", "說謝謝是有禮貌的。"]]},
+    { t: "Cause & Effect 因果關係", w: [
+      ["impact", "ˋɪmpækt", "n.", "影響；衝擊（have an impact on）", "Social media has a big impact on young people.", "社群媒體對年輕人有很大的影響。"],
+      ["cause", "kɔz", "n./v.", "造成；原因", "The heavy rain caused a lot of traffic.", "大雨造成嚴重的交通壅塞。"],
+      ["result", "rɪˋzʌlt", "n.", "結果（as a result 因此）", "As a result, the meeting started late.", "因此，會議延遲開始。"],
+      ["lead to", "lid tu", "phr.", "導致", "Stress can lead to health problems.", "壓力可能導致健康問題。"]]},
+    { t: "Willing or Not 意願表達", w: [
+      ["reluctant", "rɪˋlʌktənt", "adj.", "不情願的（= unwilling）", "He was reluctant to speak in front of the class.", "他不太願意在全班面前說話。"],
+      ["willing", "ˋwɪlɪŋ", "adj.", "願意的", "Are you willing to work on weekends?", "你願意週末工作嗎？"],
+      ["refuse", "rɪˋfjuz", "v.", "拒絕", "She refused to answer the question.", "她拒絕回答這個問題。"],
+      ["hesitate", "ˋhɛzəˏtet", "v.", "猶豫", "Don't hesitate to ask me for help.", "需要幫忙儘管開口，不要猶豫。"]]},
+    { t: "At the Office 辦公室", w: [
+      ["equipment", "ɪˋkwɪpmənt", "n.", "設備（不可數）", "The office bought new computer equipment.", "辦公室買了新的電腦設備。"],
+      ["supply", "səˋplaɪ", "n./v.", "用品；供應", "We are running out of office supplies.", "我們的辦公用品快用完了。"],
+      ["available", "əˋveləbl̩", "adj.", "有空的；可使用的", "Is the meeting room available this afternoon?", "會議室今天下午可以用嗎？"],
+      ["arrange", "əˋrendʒ", "v.", "安排", "I will arrange a meeting with the client.", "我會安排和客戶開會。"]]},
+    { t: "Changes in Plans 計畫變動", w: [
+      ["instead", "ɪnˋstɛd", "adv.", "取而代之；改為", "The bus was late, so I took a taxi instead.", "公車誤點，所以我改搭計程車。"],
+      ["cancel", "ˋkænsl̩", "v.", "取消", "The flight was cancelled because of the typhoon.", "班機因颱風取消了。"],
+      ["reschedule", "riˋskɛdʒʊl", "v.", "重新安排時間", "Can we reschedule our call to Thursday?", "我們可以把通話改到星期四嗎？"],
+      ["remain", "rɪˋmen", "v.", "保持；仍然是", "The price will remain the same.", "價格將維持不變。"]]},
+    { t: "Attitudes 態度與語氣（聽力關鍵）", w: [
+      ["optimistic", "ˏɑptəˋmɪstɪk", "adj.", "樂觀的", "I'm optimistic about our chances.", "我對我們的機會很樂觀。"],
+      ["worried", "ˋwɝɪd", "adj.", "擔心的", "My parents are worried about my health.", "我父母擔心我的健康。"],
+      ["confident", "ˋkɑnfədənt", "adj.", "有信心的", "We are confident that sales will improve.", "我們有信心銷售會改善。"],
+      ["disappointed", "ˏdɪsəˋpɔɪntɪd", "adj.", "失望的", "She was disappointed with her test results.", "她對考試結果很失望。"]]},
+    { t: "Money Matters 金錢", w: [
+      ["afford", "əˋford", "v.", "負擔得起", "We can't afford to buy a house yet.", "我們還買不起房子。"],
+      ["save", "sev", "v.", "存（錢）；節省", "I save a little money every month.", "我每個月存一點錢。"],
+      ["spend", "spɛnd", "v.", "花費（時間、金錢）", "How much did you spend on the trip?", "這趟旅行你花了多少錢？"],
+      ["expense", "ɪkˋspɛns", "n.", "費用；開銷", "Rent is my biggest monthly expense.", "房租是我每月最大的開銷。"]]},
+    { t: "Shopping 購物", w: [
+      ["receipt", "rɪˋsit", "n.", "收據", "Please keep your receipt in case you need a refund.", "請保留收據，以防需要退款。"],
+      ["exchange", "ɪksˋtʃendʒ", "n./v.", "交換；換貨", "Can I exchange this shirt for a larger size?", "這件襯衫可以換大一號嗎？"],
+      ["quality", "ˋkwɑlətɪ", "n.", "品質", "This bag is expensive, but the quality is excellent.", "這個包很貴，但品質很好。"],
+      ["compare", "kəmˋpɛr", "v.", "比較", "I always compare prices before I buy something.", "我買東西前總會比價。"]]},
+    { t: "Communication 溝通", w: [
+      ["explain", "ɪkˋsplen", "v.", "解釋", "Could you explain how this machine works?", "你可以解釋這台機器怎麼運作嗎？"],
+      ["mention", "ˋmɛnʃən", "v.", "提到", "Did he mention when he would be back?", "他有提到什麼時候回來嗎？"],
+      ["remind", "rɪˋmaɪnd", "v.", "提醒", "Please remind me to call the bank.", "請提醒我打電話給銀行。"],
+      ["misunderstand", "ˏmɪsʌndɚˋstænd", "v.", "誤會", "I think you misunderstood my question.", "我想你誤會了我的問題。"]]},
+    { t: "Meetings 會議", w: [
+      ["agenda", "əˋdʒɛndə", "n.", "議程", "Let's look at the agenda for today's meeting.", "我們來看看今天會議的議程。"],
+      ["decision", "dɪˋsɪʒən", "n.", "決定（make a decision）", "We need to make a decision by Friday.", "我們需要在星期五前做決定。"],
+      ["point", "pɔɪnt", "n.", "重點；論點", "That's a good point.", "這是個好論點。"],
+      ["agree", "əˋgri", "v.", "同意（agree with 人／意見）", "Most people agreed with the new plan.", "大多數人同意新計畫。"]]},
+    { t: "Email 電子郵件", w: [
+      ["attach", "əˋtætʃ", "v.", "附上", "I have attached the photos to this email.", "我已經把照片附在這封信裡。"],
+      ["forward", "ˋfɔrwɚd", "v.", "轉寄", "Could you forward me his email?", "你可以把他的郵件轉寄給我嗎？"],
+      ["reply", "rɪˋplaɪ", "n./v.", "回覆", "I'm still waiting for her reply.", "我還在等她的回覆。"],
+      ["inform", "ɪnˋfɔrm", "v.", "通知", "Please inform us if you cannot attend.", "如果無法出席，請通知我們。"]]},
+    { t: "Phone Calls 講電話", w: [
+      ["hold on", "hold ɑn", "phr.", "稍等（電話用語）", "Hold on a moment, please.", "請稍等一下。"],
+      ["message", "ˋmɛsɪdʒ", "n.", "留言；訊息", "Can I leave a message for Mr. Chen?", "我可以留言給陳先生嗎？"],
+      ["call back", "kɔl bæk", "phr.", "回電", "I'll call you back in ten minutes.", "我十分鐘後回電給你。"],
+      ["connect", "kəˋnɛkt", "v.", "接通；轉接；連接", "I'll connect you to the sales department.", "我幫你轉接業務部。"]]},
+    { t: "Travel 旅行", w: [
+      ["book", "bʊk", "v.", "預訂", "I booked a hotel near the station.", "我訂了車站附近的飯店。"],
+      ["passenger", "ˋpæsndʒɚ", "n.", "乘客", "All passengers must show their tickets.", "所有乘客都必須出示車票。"],
+      ["delay", "dɪˋle", "n./v.", "延誤", "Our train was delayed by an hour.", "我們的火車延誤了一小時。"],
+      ["luggage", "ˋlʌgɪdʒ", "n.", "行李（不可數）", "Please don't forget your luggage.", "請別忘了你的行李。"]]},
+    { t: "Around the City 城市與問路", w: [
+      ["nearby", "ˋnɪrˏbaɪ", "adj./adv.", "附近的；在附近", "Is there a pharmacy nearby?", "附近有藥局嗎？"],
+      ["direction", "dəˋrɛkʃən", "n.", "方向", "Excuse me, which direction is the museum?", "不好意思，博物館在哪個方向？"],
+      ["cross", "krɔs", "v.", "穿越；過（馬路）", "Be careful when you cross the street.", "過馬路時要小心。"],
+      ["located", "ˋloketɪd", "adj.", "位於", "The office is located on the fifth floor.", "辦公室位於五樓。"]]},
+    { t: "Health 健康", w: [
+      ["appointment", "əˋpɔɪntmənt", "n.", "預約；（看診）約診", "I have a doctor's appointment at three.", "我三點有看診預約。"],
+      ["medicine", "ˋmɛdəsn̩", "n.", "藥", "Take this medicine twice a day.", "這個藥一天吃兩次。"],
+      ["injury", "ˋɪndʒərɪ", "n.", "受傷；傷害", "He missed the game because of an injury.", "他因受傷錯過了比賽。"],
+      ["recover", "rɪˋkʌvɚ", "v.", "康復", "I hope you recover soon.", "希望你早日康復。"]]},
+    { t: "Daily Habits 日常習慣", w: [
+      ["habit", "ˋhæbɪt", "n.", "習慣", "Reading before bed is a good habit.", "睡前閱讀是好習慣。"],
+      ["usually", "ˋjuʒʊəlɪ", "adv.", "通常", "I usually get up at seven.", "我通常七點起床。"],
+      ["prepare", "prɪˋpɛr", "v.", "準備", "She prepared breakfast for the whole family.", "她為全家人準備了早餐。"],
+      ["relax", "rɪˋlæks", "v.", "放鬆", "I like to relax by listening to music.", "我喜歡聽音樂放鬆。"]]},
+    { t: "Home Life 居家", w: [
+      ["rent", "rɛnt", "n./v.", "租金；租", "How much is the rent for this apartment?", "這間公寓的租金多少？"],
+      ["repair", "rɪˋpɛr", "v.", "修理", "The landlord will repair the window tomorrow.", "房東明天會修窗戶。"],
+      ["tidy", "ˋtaɪdɪ", "adj.", "整潔的", "Please keep your room tidy.", "請保持房間整潔。"],
+      ["neighbor", "ˋnebɚ", "n.", "鄰居", "Our neighbors are very quiet.", "我們的鄰居很安靜。"]]},
+    { t: "Eating Out 餐廳用餐", w: [
+      ["order", "ˋɔrdɚ", "n./v.", "點餐；訂單", "Are you ready to order?", "您準備好點餐了嗎？"],
+      ["recommend", "ˏrɛkəˋmɛnd", "v.", "推薦", "What do you recommend?", "你推薦什麼？"],
+      ["bill", "bɪl", "n.", "帳單", "Could we have the bill, please?", "可以給我們帳單嗎？"],
+      ["ingredient", "ɪnˋgridɪənt", "n.", "食材；成分", "Fresh ingredients make food taste better.", "新鮮的食材讓食物更好吃。"]]},
+    { t: "Problems & Solutions 解決問題", w: [
+      ["solve", "sɑlv", "v.", "解決", "We solved the problem together.", "我們一起解決了問題。"],
+      ["mistake", "məˋstek", "n.", "錯誤（make a mistake）", "Everyone makes mistakes.", "每個人都會犯錯。"],
+      ["avoid", "əˋvɔɪd", "v.", "避免", "Leave early to avoid the traffic.", "早點出發以避開車潮。"],
+      ["deal with", "dil wɪð", "phr.", "處理；應付", "I'll deal with this problem after lunch.", "我午餐後會處理這個問題。"]]},
+    { t: "Work & Career 工作與職涯", w: [
+      ["career", "kəˋrɪr", "n.", "職業生涯", "She wants a career in marketing.", "她想從事行銷工作。"],
+      ["skill", "skɪl", "n.", "技能", "Communication is an important skill.", "溝通是一項重要的技能。"],
+      ["salary", "ˋsælərɪ", "n.", "薪水", "The job offers a good salary.", "這份工作薪水不錯。"],
+      ["experience", "ɪkˋspɪrɪəns", "n.", "經驗", "I have three years of experience in sales.", "我有三年業務經驗。"]]},
+    { t: "Tasks & Responsibility 任務與責任", w: [
+      ["responsible", "rɪˋspɑnsəbl̩", "adj.", "負責的（be responsible for）", "Who is responsible for the budget?", "誰負責預算？"],
+      ["task", "tæsk", "n.", "任務；工作", "I have three tasks to finish today.", "我今天有三項任務要完成。"],
+      ["complete", "kəmˋplit", "v.", "完成；填寫完", "Please complete this form.", "請填寫完這份表格。"],
+      ["effort", "ˋɛfɚt", "n.", "努力", "Thank you for your effort.", "謝謝你的努力。"]]},
+    { t: "Giving Opinions 表達意見", w: [
+      ["opinion", "əˋpɪnjən", "n.", "意見；看法", "What's your opinion on this idea?", "你對這個想法有什麼看法？"],
+      ["suggest", "səgˋdʒɛst", "v.", "建議", "I suggest that we take a short break.", "我建議我們休息一下。"],
+      ["prefer", "prɪˋfɝ", "v.", "比較喜歡（prefer A to B）", "I prefer tea to coffee.", "比起咖啡我更喜歡茶。"],
+      ["disagree", "ˏdɪsəˋgri", "v.", "不同意", "I'm sorry, but I disagree.", "抱歉，但我不同意。"]]},
+    { t: "Confusing Pairs 1 易混淆字（名詞 vs 動詞）", w: [
+      ["advice", "ədˋvaɪs", "n.", "建議（名詞，不可數）", "Can you give me some advice?", "你能給我一些建議嗎？"],
+      ["advise", "ədˋvaɪz", "v.", "勸告；建議（動詞）", "The doctor advised me to rest.", "醫生建議我休息。"],
+      ["affect", "əˋfɛkt", "v.", "影響（動詞）", "Lack of sleep can affect your work.", "睡眠不足會影響你的工作。"],
+      ["effect", "ɪˋfɛkt", "n.", "效果；影響（名詞）", "The medicine had a quick effect.", "這藥很快就見效了。"]]},
+    { t: "Confusing Pairs 2 易混淆字（拼字相近）", w: [
+      ["raise", "rez", "v.", "提高；舉起（及物）", "The company will raise prices next month.", "公司下個月將調漲價格。"],
+      ["rise", "raɪz", "v.", "上升（不及物）", "Prices rise every year.", "物價每年都上漲。"],
+      ["lose", "luz", "v.", "遺失；輸掉", "Don't lose your ticket.", "別弄丟你的票。"],
+      ["loose", "lus", "adj.", "鬆的", "These pants are too loose.", "這條褲子太鬆了。"]]},
+    { t: "Weather & Environment 天氣與環境", w: [
+      ["forecast", "ˋforˏkæst", "n.", "預報", "The weather forecast says it will rain.", "氣象預報說會下雨。"],
+      ["temperature", "ˋtɛmprətʃɚ", "n.", "溫度；氣溫", "The temperature dropped at night.", "晚上氣溫下降了。"],
+      ["pollution", "pəˋluʃən", "n.", "污染", "Air pollution is a problem in big cities.", "空氣污染是大城市的問題。"],
+      ["protect", "prəˋtɛkt", "v.", "保護", "We must protect the environment.", "我們必須保護環境。"]]},
+    { t: "Technology 科技生活", w: [
+      ["download", "ˋdaʊnˏlod", "v.", "下載", "You can download the app for free.", "你可以免費下載這個應用程式。"],
+      ["password", "ˋpæsˏwɝd", "n.", "密碼", "Don't share your password with anyone.", "別把密碼告訴任何人。"],
+      ["account", "əˋkaʊnt", "n.", "帳戶；帳號", "I need to create a new account.", "我需要建立一個新帳號。"],
+      ["connection", "kəˋnɛkʃən", "n.", "連線；連接", "The internet connection is very slow today.", "今天網路連線很慢。"]]},
+    { t: "Learning English 學習英文", w: [
+      ["improve", "ɪmˋpruv", "v.", "改善；加強", "I want to improve my speaking skills.", "我想加強我的口說能力。"],
+      ["practice", "ˋpræktɪs", "n./v.", "練習", "I practice English for twenty minutes every day.", "我每天練習英文二十分鐘。"],
+      ["memorize", "ˋmɛməˏraɪz", "v.", "記住；背誦", "It's hard to memorize so many words.", "要背這麼多單字很難。"],
+      ["progress", "ˋprɑgrɛs", "n.", "進步（不可數）", "I'm making good progress with my English.", "我的英文進步得不錯。"]]},
+    { t: "Social Life 社交", w: [
+      ["invite", "ɪnˋvaɪt", "v.", "邀請", "Thanks for inviting me to your party.", "謝謝你邀請我參加派對。"],
+      ["introduce", "ˏɪntrəˋdjus", "v.", "介紹", "Let me introduce myself.", "讓我自我介紹一下。"],
+      ["appreciate", "əˋpriʃɪˏet", "v.", "感謝；欣賞", "I really appreciate your help.", "我真的很感謝你的幫忙。"],
+      ["celebrate", "ˋsɛləˏbret", "v.", "慶祝", "We celebrated her birthday at a restaurant.", "我們在餐廳幫她慶生。"]]},
+    { t: "Goals & Success 目標與成功", w: [
+      ["goal", "gol", "n.", "目標", "My goal is to pass the exam this year.", "我的目標是今年通過考試。"],
+      ["achieve", "əˋtʃiv", "v.", "達成；實現", "Hard work helps you achieve your dreams.", "努力能幫助你實現夢想。"],
+      ["plan", "plæn", "n./v.", "計畫", "What are your plans for next month?", "你下個月有什麼計畫？"],
+      ["succeed", "səkˋsid", "v.", "成功", "If you keep trying, you will succeed.", "只要持續嘗試，你就會成功。"]]}
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const TOTAL = DAYS.length;
+  const KEY = "eng30-progress-v2";      // v2 = B1 字彙加強題庫
+  const OLD_KEY = "eng30-progress-v1";  // v1 = 舊 B1–B2 題庫（只沿用程度測驗與開始日期）
+
+  /* ---------- 存檔（localStorage） ---------- */
+  let storageOK = true;
+  function today() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  // mod：記錄「完成天數／錯題本」每個勾選最後修改的時間，跨裝置合併時以較新者為準
+  // resetAt：重設或完全取代的時間，比它舊的資料在合併時會被捨棄
+  function freshState() { return { day: 1, card: 0, done: {}, scores: {}, hard: {}, mod: {}, started: today(), updatedAt: 0, resetAt: 0 }; }
+  function load() {
+    const def = freshState();
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) {
+        const old = JSON.parse(localStorage.getItem(OLD_KEY) || "null");
+        if (old && old.placement) def.placement = old.placement;
+        if (old && old.started) def.started = old.started;
+        return def;
+      }
+      const o = JSON.parse(raw);
+      return Object.assign(def, o && typeof o === "object" ? o : {});
+    } catch (e) { storageOK = false; return def; }
+  }
+  function writeLocal() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); storageOK = true; }
+    catch (e) { storageOK = false; }
+  }
+  function save() {
+    S.updatedAt = Date.now();
+    writeLocal();
+    schedulePush();
+  }
+  function touch(kind, id) { S.mod[kind + ":" + id] = Date.now(); }
+  function normalizeState(o) {
+    const s = Object.assign(freshState(), o && typeof o === "object" ? o : {});
+    ["done", "scores", "hard", "mod"].forEach((k) => { if (!s[k] || typeof s[k] !== "object") s[k] = {}; });
+    s.day = Math.min(Math.max(parseInt(s.day, 10) || 1, 1), TOTAL);
+    s.card = Math.min(Math.max(parseInt(s.card, 10) || 0, 0), DAYS[s.day - 1].w.length - 1);
+    return s;
+  }
+  let S = normalizeState(load());
+
+  /* 合併兩份進度：a = 本機，b = 另一台裝置／雲端 */
+  function mergeState(a, b) {
+    a = normalizeState(a); b = normalizeState(b);
+    if ((b.resetAt || 0) > (a.resetAt || 0)) return b;   // 對方較晚重設過 → 以對方為準
+    if ((a.resetAt || 0) > (b.resetAt || 0)) return a;
+    const out = JSON.parse(JSON.stringify(a));
+    const newer = (b.updatedAt || 0) > (a.updatedAt || 0) ? b : a;
+    out.day = newer.day; out.card = newer.card;
+    if (b.started && (!a.started || b.started < a.started)) out.started = b.started;
+    Object.keys(b.scores).forEach((k) => {
+      const x = a.scores[k], y = b.scores[k];
+      if (!x || y.att > x.att || (y.att === x.att && y.best > x.best)) out.scores[k] = y;
+    });
+    const keys = new Set(Object.keys(a.mod).concat(Object.keys(b.mod)));
+    Object.keys(a.done).concat(Object.keys(b.done)).forEach((d) => keys.add("done:" + d));
+    Object.keys(a.hard).concat(Object.keys(b.hard)).forEach((k) => keys.add("hard:" + k));
+    keys.forEach((mk) => {
+      const coll = mk.slice(0, 4), id = mk.slice(5);
+      if (coll !== "done" && coll !== "hard") return;
+      const ta = a.mod[mk] || 0, tb = b.mod[mk] || 0;
+      let v;
+      if (ta === tb) v = a[coll][id] || b[coll][id];      // 沒有時間資訊 → 聯集
+      else v = (tb > ta ? b : a)[coll][id];               // 以最後修改者為準（包含「移除」）
+      if (v) out[coll][id] = v; else delete out[coll][id];
+      if (ta || tb) out.mod[mk] = Math.max(ta, tb);
+    });
+    const pa = a.placement, pb = b.placement;
+    if (pb && (!pa || (pb.ts || 0) > (pa.ts || 0) || (!pb.ts && !pa.ts && pb.date > pa.date))) out.placement = pb;
+    out.updatedAt = Math.max(a.updatedAt || 0, b.updatedAt || 0);
+    return normalizeState(out);
+  }
+
+  const keyOf = (d, i) => d + "-" + i;
+  const cur = () => DAYS[S.day - 1].w[S.card];
+  const curKey = () => keyOf(S.day, S.card);
+  function parseKey(k) { const [d, i] = k.split("-").map(Number); return { d, i, w: DAYS[d - 1] && DAYS[d - 1].w[i] }; }
+
+  /* ---------- Toast ---------- */
+  let toastTimer = 0;
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+  }
+
+  /* ---------- 發音 TTS（speechSynthesis） ---------- */
+  const synth = window.speechSynthesis || null;
+  let voice = null, currentUtter = null, playingBtn = null, lastClick = 0;
+  function pickVoice() {
+    if (!synth) return;
+    const vs = synth.getVoices();
+    if (!vs.length) return;
+    const us = vs.filter((v) => /^en[-_]US$/i.test(v.lang));
+    voice = us.find((v) => v.localService) || us[0] ||
+            vs.find((v) => /^en/i.test(v.lang)) || null;
+  }
+  if (synth) {
+    pickVoice();
+    if ("onvoiceschanged" in synth) synth.onvoiceschanged = pickVoice;
+  }
+  function clearPlaying() {
+    if (playingBtn) playingBtn.classList.remove("is-playing");
+    playingBtn = null;
+  }
+  function stopSpeech() {
+    if (synth) synth.cancel();
+    currentUtter = null;
+    clearPlaying();
+  }
+  function speak(text, rate, btn) {
+    if (!synth) { toast("這個瀏覽器不支援語音朗讀，請改用 Chrome 或 Edge。"); return; }
+    const now = Date.now();
+    if (now - lastClick < 300) return;            // 防連點
+    lastClick = now;
+    const sameBtn = btn && btn === playingBtn;
+    stopSpeech();                                  // 先停止任何正在播放的聲音，避免重疊
+    if (sameBtn) return;                           // 再按一次同一顆按鈕 = 停止
+    if (listening && rec) rec.abort();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
+    if (voice) u.voice = voice;
+    u.rate = rate;
+    u.pitch = 1;
+    const done = () => { if (currentUtter === u) { currentUtter = null; clearPlaying(); } };
+    u.onend = done;
+    u.onerror = done;
+    currentUtter = u;
+    playingBtn = btn || null;
+    if (btn) btn.classList.add("is-playing");
+    setTimeout(() => { if (currentUtter === u) synth.speak(u); }, 60);  // Chrome 在 cancel 後立即 speak 偶爾會失效
+  }
+
+  /* ---------- 文字比對 ---------- */
+  const ONES = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+  const TENS = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+  function numWords(n) {
+    if (!isFinite(n)) return "";
+    if (n < 20) return ONES[n];
+    if (n < 100) return TENS[Math.floor(n / 10)] + (n % 10 ? " " + ONES[n % 10] : "");
+    if (n < 1000) return ONES[Math.floor(n / 100)] + " hundred" + (n % 100 ? " " + numWords(n % 100) : "");
+    if (n < 1000000) return numWords(Math.floor(n / 1000)) + " thousand" + (n % 1000 ? " " + numWords(n % 1000) : "");
+    return String(n);
+  }
+  function normWords(s) {
+    return String(s).toLowerCase()
+      .replace(/[’‘`]/g, "'")
+      .replace(/(\d+)\s*%/g, "$1 percent")
+      .replace(/\d+/g, (m) => " " + numWords(parseInt(m, 10)) + " ")
+      .replace(/'/g, "")
+      .replace(/[^a-z0-9\s]+/g, " ")
+      .split(/\s+/).filter(Boolean);
+  }
+  function lcs(a, b) {
+    const n = a.length, m = b.length;
+    const dp = [];
+    for (let i = 0; i <= n; i++) dp.push(new Uint16Array(m + 1));
+    for (let i = n - 1; i >= 0; i--)
+      for (let j = m - 1; j >= 0; j--)
+        dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    const matched = new Set();
+    let i = 0, j = 0;
+    while (i < n && j < m) {
+      if (a[i] === b[j]) { matched.add(i); i++; j++; }
+      else if (dp[i + 1][j] >= dp[i][j + 1]) i++;
+      else j++;
+    }
+    return { len: dp[0][0], matched };
+  }
+  function lev(a, b) {
+    if (a === b) return 0;
+    let prev = [];
+    for (let j = 0; j <= b.length; j++) prev[j] = j;
+    for (let i = 1; i <= a.length; i++) {
+      const row = [i];
+      for (let j = 1; j <= b.length; j++)
+        row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = row;
+    }
+    return prev[b.length];
+  }
+  function similarity(target, said) {
+    const t = normWords(target), s = normWords(said);
+    if (!s.length || !t.length) return { score: 0, matched: new Set() };
+    const { len, matched } = lcs(t, s);
+    const wordSim = (2 * len) / (t.length + s.length);
+    const ts = t.join(" "), ss = s.join(" ");
+    const charSim = 1 - lev(ts, ss) / Math.max(ts.length, ss.length);
+    const score = Math.round(100 * (0.7 * wordSim + 0.3 * charSim));
+    return { score: Math.max(0, Math.min(100, score)), matched };
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function renderSentence(matched) {
+    const sentence = cur()[4];
+    if (!matched) { $("sentence").textContent = sentence; return; }
+    let idx = 0;
+    $("sentence").innerHTML = sentence.split(/\s+/).map((tok) => {
+      const n = normWords(tok).length;
+      let hit = true;
+      for (let k = 0; k < n; k++) if (!matched.has(idx + k)) hit = false;
+      idx += n;
+      return '<span class="' + (hit ? "w-hit" : "w-miss") + '">' + esc(tok) + "</span>";
+    }).join(" ");
+  }
+
+  /* ---------- 評分與紀錄 ---------- */
+  function grade(text, key) {
+    const [d, i] = key.split("-").map(Number);
+    const w = DAYS[d - 1].w[i];
+    const { score, matched } = similarity(w[4], text);
+    const entry = S.scores[key] || { att: 0, sum: 0, best: 0, last: 0, hist: [] };
+    entry.att += 1; entry.sum += score; entry.last = score; entry.best = Math.max(entry.best, score);
+    entry.hist = [{ s: score, t: text, at: today() }].concat(entry.hist || []).slice(0, 5);
+    S.scores[key] = entry;
+    let autoAdded = false;
+    if (score < 70 && !S.hard[key]) { S.hard[key] = { at: today(), auto: true }; touch("hard", key); autoAdded = true; }
+    save();
+    if (key !== curKey()) { renderStats(); renderChips(); renderNotebook(); return; }
+
+    const box = $("result");
+    box.hidden = false;
+    box.className = "result " + (score >= 90 ? "good" : score >= 70 ? "warn" : "bad");
+    $("scoreNum").textContent = score + "%";
+    $("scoreLabel").textContent = score >= 90 ? "Awesome!" : score >= 70 ? "Good job" : "Try again";
+    $("scoreSub").textContent = score >= 90 ? "發音很清楚，下一張！" :
+      score >= 70 ? "大致正確，紅色波浪線的字再練一次。" :
+      "先按 🐢 慢速朗讀聽一遍，再跟讀紅色的字。";
+    renderSentence(matched);
+    renderHistory();
+    renderStats(); renderChips(); renderNotebook(); renderHardBtn();
+    if (autoAdded) toast("低於 70 分，已自動加入錯題本");
+  }
+
+  /* ---------- 麥克風跟讀（webkitSpeechRecognition） ---------- */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  let rec = null, listening = false;
+  function setHint(msg, isErr) {
+    const h = $("micHint");
+    h.textContent = msg;
+    h.classList.toggle("error", !!isErr);
+  }
+  function setMicUI(on) {
+    listening = on;
+    const b = $("micBtn");
+    b.classList.toggle("listening", on);
+    b.textContent = on ? "⏹ 停止聆聽" : "🎤 開啟麥克風跟讀";
+  }
+  function showTranscript(text, interim) {
+    const t = $("transcript");
+    t.classList.remove("placeholder");
+    t.classList.toggle("interim", !!interim);
+    t.textContent = text;
+  }
+  const SR_ERRORS = {
+    "not-allowed": "麥克風權限被拒絕。在 claude.ai 預覽畫面中麥克風會被封鎖，請下載此 HTML 檔，用 Chrome 或 Edge 直接開啟並允許麥克風。",
+    "service-not-allowed": "瀏覽器不允許語音辨識服務。請用 Chrome 或 Edge 直接開啟此檔案。",
+    "no-speech": "沒有聽到聲音，請靠近麥克風再試一次。",
+    "audio-capture": "找不到麥克風，請確認麥克風已連接。",
+    "network": "語音辨識需要網路連線（Chrome/Edge 會把語音送到雲端辨識），請確認網路後再試。",
+    "language-not-supported": "此瀏覽器不支援美式英文辨識。"
+  };
+  function toggleMic() {
+    if (!SR) {
+      setHint("這個瀏覽器不支援語音辨識，請改用電腦版 Chrome 或 Edge；也可以展開下方改用打字評分。", true);
+      return;
+    }
+    if (listening && rec) { rec.stop(); return; }
+    stopSpeech();
+    const key = curKey();
+    let finalText = "", interimText = "", errored = false;
+    rec = new SR();
+    rec.lang = "en-US";
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
+    rec.onstart = () => { setMicUI(true); setHint("正在聆聽…請唸出例句，唸完停頓一下或再按一次停止。"); };
+    rec.onresult = (e) => {
+      finalText = ""; interimText = "";
+      for (let i = 0; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) finalText += r[0].transcript; else interimText += r[0].transcript;
+      }
+      showTranscript((finalText + " " + interimText).trim(), !!interimText && !finalText);
+    };
+    rec.onerror = (e) => {
+      if (e.error === "aborted") return;
+      errored = true;
+      setHint(SR_ERRORS[e.error] || ("語音辨識發生錯誤：" + e.error), true);
+    };
+    rec.onend = () => {
+      setMicUI(false);
+      const text = (finalText || interimText).trim();
+      if (text) {
+        showTranscript(text, false);
+        grade(text, key);
+        if (!errored) setHint("可以再按一次重新挑戰，分數會取最高分記錄。");
+      } else if (!errored) {
+        setHint("沒有辨識到內容，請再試一次。", true);
+      }
+      rec = null;
+    };
+    try { rec.start(); }
+    catch (err) { setMicUI(false); setHint("無法啟動麥克風：" + err.message, true); }
+  }
+
+  /* ---------- 畫面 ---------- */
+  function renderDaySelect() {
+    const sel = $("daySelect");
+    sel.innerHTML = DAYS.map((d, i) =>
+      '<option value="' + (i + 1) + '">Day ' + (i + 1) + " · " + esc(d.t) + (S.done[i + 1] ? "  ✓" : "") + "</option>").join("");
+    sel.value = String(S.day);
+  }
+  function renderChips() {
+    $("dayChips").innerHTML = DAYS.map((d, i) => {
+      const day = i + 1;
+      const touched = d.w.some((_, j) => S.scores[keyOf(day, j)]);
+      const cls = ["chip", S.done[day] ? "done" : "", touched ? "touched" : ""].join(" ").trim();
+      return '<button class="' + cls + '" data-day="' + day + '" aria-current="' + (day === S.day) + '" title="Day ' + day + " · " + esc(d.t) + '">' + day + "</button>";
+    }).join("");
+  }
+  function renderStats() {
+    const done = Object.keys(S.done).filter((k) => S.done[k]).length;
+    let att = 0, sum = 0;
+    Object.values(S.scores).forEach((r) => { att += r.att; sum += r.sum; });
+    $("stDone").textContent = done + "/" + TOTAL;
+    $("stAvg").textContent = att ? Math.round(sum / att) : "–";
+    $("stAtt").textContent = att;
+    $("stHard").textContent = Object.keys(S.hard).length;
+    $("progressBar").style.width = (done / TOTAL * 100) + "%";
+    const db = $("doneBtn");
+    db.classList.toggle("is-on", !!S.done[S.day]);
+    db.textContent = S.done[S.day] ? "✅ Day " + S.day + " 已完成" : "☐ 標記 Day " + S.day + " 完成";
+  }
+  function renderHardBtn() {
+    const on = !!S.hard[curKey()];
+    const b = $("hardBtn");
+    b.classList.toggle("is-on", on);
+    b.textContent = on ? "★ 已在錯題本" : "☆ 加入錯題本";
+  }
+  function renderHistory() {
+    const r = S.scores[curKey()];
+    $("history").textContent = r ? "已練習 " + r.att + " 次 · 最高 " + r.best + " 分 · 上次 " + r.last + " 分" : "這張卡還沒有跟讀紀錄。";
+  }
+  function renderNotebook() {
+    const keys = Object.keys(S.hard).sort((a, b) => {
+      const A = a.split("-").map(Number), B = b.split("-").map(Number);
+      return A[0] - B[0] || A[1] - B[1];
+    });
+    $("hardCount").textContent = keys.length;
+    $("hardEmpty").hidden = keys.length > 0;
+    $("hardList").innerHTML = keys.map((k) => {
+      const p = parseKey(k);
+      if (!p.w) return "";
+      const r = S.scores[k];
+      const info = "Day " + p.d + " · " + p.w[3] + (r ? " · 最高 " + r.best + " 分" : "");
+      return '<li><button class="go" data-key="' + k + '"><b>' + esc(p.w[0]) +
+        (S.hard[k].auto ? ' <span class="tag-auto">低分</span>' : "") + "</b><small>" + esc(info) + "</small></button>" +
+        '<button class="rm" data-rm="' + k + '" aria-label="從錯題本移除 ' + esc(p.w[0]) + '">✕</button></li>';
+    }).join("");
+  }
+  function renderCard() {
+    const w = cur();
+    const n = DAYS[S.day - 1].w.length;
+    $("dayTag").textContent = "Day " + S.day + " · " + DAYS[S.day - 1].t;
+    $("counter").textContent = (S.card + 1) + " / " + n;
+    $("word").textContent = w[0];
+    $("kk").textContent = "[" + w[1] + "]";
+    $("pos").textContent = w[2];
+    $("zh").textContent = w[3];
+    renderSentence(null);
+    $("sentenceZh").textContent = w[5];
+    $("dots").innerHTML = DAYS[S.day - 1].w.map((_, i) => '<span class="' + (i === S.card ? "on" : "") + '"></span>').join("");
+    $("prevCard").disabled = S.day === 1 && S.card === 0;
+    $("nextCard").disabled = S.day === TOTAL && S.card === n - 1;
+    $("prevDay").disabled = S.day === 1;
+    $("nextDay").disabled = S.day === TOTAL;
+    // 重置跟讀區
+    $("result").hidden = true;
+    const t = $("transcript");
+    t.className = "transcript placeholder";
+    t.textContent = "你唸出的英文會即時顯示在這裡";
+    $("typeInput").value = "";
+    setHint(SR ? "按下後唸出上面的例句，說完會自動評分。" : "這個瀏覽器不支援語音辨識，請用 Chrome 或 Edge，或改用下方打字評分。", !SR);
+    renderHistory();
+    renderHardBtn();
+  }
+  function renderAll() {
+    renderDaySelect(); renderChips(); renderStats(); renderCard(); renderNotebook();
+    renderPlacementEntry();
+  }
+
+  function goTo(day, card) {
+    stopSpeech();
+    if (listening && rec) rec.abort();
+    S.day = Math.min(Math.max(day, 1), TOTAL);
+    S.card = Math.min(Math.max(card, 0), DAYS[S.day - 1].w.length - 1);
+    save();
+    $("daySelect").value = String(S.day);
+    renderChips(); renderStats(); renderCard();
+  }
+  function step(dir) {
+    const n = DAYS[S.day - 1].w.length;
+    if (dir > 0) {
+      if (S.card < n - 1) goTo(S.day, S.card + 1);
+      else if (S.day < TOTAL) { goTo(S.day + 1, 0); toast("進入 Day " + S.day); }
+    } else {
+      if (S.card > 0) goTo(S.day, S.card - 1);
+      else if (S.day > 1) goTo(S.day - 1, DAYS[S.day - 2].w.length - 1);
+    }
+  }
+
+  /* ---------- 學習摘要 ---------- */
+  function buildSummary() {
+    const doneDays = Object.keys(S.done).filter((k) => S.done[k]).map(Number).sort((a, b) => a - b);
+    const todo = [];
+    for (let d = 1; d <= TOTAL; d++) if (!S.done[d]) todo.push(d);
+    let att = 0, sum = 0;
+    Object.values(S.scores).forEach((r) => { att += r.att; sum += r.sum; });
+    const lines = [];
+    lines.push("【30 天英語能力提升計畫｜學習摘要】");
+    lines.push("開始日期：" + (S.started || "—") + "　匯出日期：" + today());
+    if (S.placement) lines.push("程度測驗：CEFR " + S.placement.level + "（" + S.placement.date + "，答對 " + S.placement.correct + "/" + S.placement.total + "）");
+    lines.push("");
+    lines.push("■ 完成天數：" + doneDays.length + " / " + TOTAL);
+    lines.push("　已完成：" + (doneDays.length ? doneDays.map((d) => "Day " + d).join("、") : "無"));
+    if (todo.length && todo.length < TOTAL) lines.push("　未完成：" + todo.map((d) => "Day " + d).join("、"));
+    lines.push("");
+    lines.push("■ 跟讀成績：共 " + att + " 次，平均 " + (att ? Math.round(sum / att) : 0) + " 分，練習過 " + Object.keys(S.scores).length + " / " + TOTAL * 4 + " 個例句");
+    const perDay = [];
+    DAYS.forEach((d, i) => {
+      let a = 0, s = 0;
+      d.w.forEach((_, j) => { const r = S.scores[keyOf(i + 1, j)]; if (r) { a += r.att; s += r.sum; } });
+      if (a) perDay.push("Day " + (i + 1) + " " + Math.round(s / a) + " 分");
+    });
+    if (perDay.length) lines.push("　各天平均：" + perDay.join("｜"));
+    lines.push("");
+    const hardKeys = Object.keys(S.hard).sort((a, b) => {
+      const A = a.split("-").map(Number), B = b.split("-").map(Number);
+      return A[0] - B[0] || A[1] - B[1];
+    });
+    lines.push("■ 錯題本（" + hardKeys.length + " 個）");
+    if (!hardKeys.length) lines.push("　（無）");
+    hardKeys.forEach((k, n) => {
+      const p = parseKey(k); if (!p.w) return;
+      const r = S.scores[k];
+      lines.push("　" + (n + 1) + ". " + p.w[0] + " [" + p.w[1] + "] " + p.w[2] + " " + p.w[3] +
+        "｜Day " + p.d + "｜" + (r ? "最高 " + r.best + " 分／練習 " + r.att + " 次" : "未跟讀") +
+        "｜" + (S.hard[k].auto ? "低分自動加入" : "手動標記"));
+    });
+    const weak = Object.keys(S.scores).filter((k) => S.scores[k].best < 70)
+      .sort((a, b) => S.scores[a].best - S.scores[b].best);
+    lines.push("");
+    lines.push("■ 最高分仍低於 70 分的例句（" + weak.length + " 句）");
+    if (!weak.length) lines.push("　（無）");
+    weak.forEach((k) => {
+      const p = parseKey(k); if (!p.w) return;
+      const h = S.scores[k].hist && S.scores[k].hist[0];
+      lines.push("　- " + p.w[4] + "（最高 " + S.scores[k].best + " 分" + (h ? "，最近辨識為：" + h.t : "") + "）");
+    });
+    lines.push("");
+    lines.push("■ 給 AI 的請求：本月題庫為 CEFR B1（字彙加強）。請根據我的錯題本與低分例句，設計下個月程度再提升一級的 30 天題庫（約 B1+～B2），並加強我容易唸錯的發音。");
+    return lines.join("\n");
+  }
+  function copySummary() {
+    const text = buildSummary();
+    const out = $("summaryOut");
+    out.value = text;
+    out.hidden = false;
+    const fallback = () => {
+      out.focus(); out.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      toast(ok ? "已複製學習摘要" : "無法自動複製，文字已選取，請按 Ctrl+C 複製");
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => toast("已複製學習摘要到剪貼簿"), fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  /* ---------- 事件 ---------- */
+  document.addEventListener("click", (e) => {
+    const say = e.target.closest("[data-say]");
+    if (say) {
+      const w = cur();
+      speak(say.dataset.say === "word" ? w[0] : w[4], parseFloat(say.dataset.rate), say);
+      return;
+    }
+    const chip = e.target.closest("[data-day]");
+    if (chip) { goTo(parseInt(chip.dataset.day, 10), 0); return; }
+    const go = e.target.closest("[data-key]");
+    if (go) { const p = parseKey(go.dataset.key); goTo(p.d, p.i); $("card").scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    const rm = e.target.closest("[data-rm]");
+    if (rm) {
+      delete S.hard[rm.dataset.rm]; touch("hard", rm.dataset.rm); save();
+      renderNotebook(); renderStats(); renderHardBtn();
+      toast("已從錯題本移除");
+    }
+  });
+  $("daySelect").addEventListener("change", (e) => goTo(parseInt(e.target.value, 10), 0));
+  $("prevDay").addEventListener("click", () => goTo(S.day - 1, 0));
+  $("nextDay").addEventListener("click", () => goTo(S.day + 1, 0));
+  $("prevCard").addEventListener("click", () => step(-1));
+  $("nextCard").addEventListener("click", () => step(1));
+  $("doneBtn").addEventListener("click", () => {
+    if (S.done[S.day]) delete S.done[S.day]; else S.done[S.day] = today();
+    touch("done", S.day);
+    save();
+    renderDaySelect(); renderChips(); renderStats();
+    if (S.done[S.day]) toast("Day " + S.day + " 完成！累積 " + Object.keys(S.done).length + " 天");
+  });
+  $("hardBtn").addEventListener("click", () => {
+    const k = curKey();
+    if (S.hard[k]) delete S.hard[k]; else S.hard[k] = { at: today(), auto: false };
+    touch("hard", k);
+    save();
+    renderHardBtn(); renderNotebook(); renderStats();
+    toast(S.hard[k] ? "已加入錯題本" : "已從錯題本移除");
+  });
+  $("micBtn").addEventListener("click", toggleMic);
+  $("typeForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = $("typeInput").value.trim();
+    if (!v) { toast("請先輸入例句"); return; }
+    showTranscript(v, false);
+    grade(v, curKey());
+  });
+  $("copyBtn").addEventListener("click", copySummary);
+  $("resetBtn").addEventListener("click", () => { $("resetConfirm").hidden = false; });
+  $("resetNo").addEventListener("click", () => { $("resetConfirm").hidden = true; });
+  $("resetYes").addEventListener("click", () => {
+    S = freshState(); S.resetAt = Date.now(); save();
+    T = null; $("testView").hidden = true; $("studyView").hidden = false;
+    $("resetConfirm").hidden = true;
+    $("summaryOut").hidden = true;
+    renderAll();
+    toast("進度已清除");
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest("input, textarea, select")) return;
+    if (!$("testView").hidden) return;
+    if (e.key === "ArrowRight") step(1);
+    else if (e.key === "ArrowLeft") step(-1);
+  });
+
+  /* ---------- 程度測驗（Placement Test） ---------- */
+  const LEVELS = ["A2", "B1", "B2", "C1"];
+  const SEC_NAME = { vocab: "字彙", grammar: "文法", read: "閱讀", listen: "聽力" };
+  const PT = [
+    { id: "v1", sec: "vocab", lv: "A2", q: "I'm very ___. Can I have something to eat?", o: ["hungry", "angry", "tired", "full"], a: 0 },
+    { id: "v2", sec: "vocab", lv: "A2", q: "“borrow” 的意思是？", o: ["（向別人）借來", "借給別人", "購買", "歸還"], a: 0 },
+    { id: "v3", sec: "vocab", lv: "B1", q: "The meeting was ___ until next week because the manager was sick.", o: ["postponed", "prevented", "pretended", "produced"], a: 0 },
+    { id: "v4", sec: "vocab", lv: "B1", q: "Which word is closest in meaning to “reliable”?", o: ["dependable", "expensive", "flexible", "ordinary"], a: 0 },
+    { id: "v5", sec: "vocab", lv: "B2", q: "The new policy had a significant ___ on employee morale.", o: ["impact", "effort", "access", "purpose"], a: 0 },
+    { id: "v6", sec: "vocab", lv: "B2", q: "Which word is closest in meaning to “reluctant”?", o: ["unwilling", "eager", "curious", "careful"], a: 0 },
+    { id: "v7", sec: "vocab", lv: "C1", q: "Her argument was so ___ that nobody could find a flaw in it.", o: ["compelling", "tentative", "redundant", "ambiguous"], a: 0 },
+    { id: "v8", sec: "vocab", lv: "C1", q: "“to mitigate a risk” 的意思是？", o: ["降低、減輕風險", "忽略風險", "評估風險", "轉嫁風險"], a: 0 },
+    { id: "g1", sec: "grammar", lv: "A2", q: "She ___ to work by bus every day.", o: ["goes", "go", "going", "is go"], a: 0 },
+    { id: "g2", sec: "grammar", lv: "A2", q: "I ___ my keys yesterday, so I couldn't get into the house.", o: ["lost", "lose", "have lost", "was lose"], a: 0 },
+    { id: "g3", sec: "grammar", lv: "B1", q: "I have lived in this city ___ 2019.", o: ["since", "for", "from", "at"], a: 0 },
+    { id: "g4", sec: "grammar", lv: "B1", q: "If it rains tomorrow, we ___ the picnic.", o: ["will cancel", "would cancel", "cancelled", "had cancelled"], a: 0 },
+    { id: "g5", sec: "grammar", lv: "B2", q: "By the time we arrived at the cinema, the movie ___.", o: ["had already started", "has already started", "already starts", "was already start"], a: 0 },
+    { id: "g6", sec: "grammar", lv: "B2", q: "I'd rather you ___ smoke in the office.", o: ["didn't", "don't", "won't", "not"], a: 0 },
+    { id: "g7", sec: "grammar", lv: "C1", q: "___ had I left the house than it started to rain.", o: ["No sooner", "Hardly", "As soon", "Rarely"], a: 0 },
+    { id: "g8", sec: "grammar", lv: "C1", q: "It's high time the government ___ action on housing prices.", o: ["took", "takes", "will take", "has taken"], a: 0 },
+    { id: "r1", sec: "read", lv: "A2", p: "Tom works in a bank from Monday to Friday. On Saturdays, he plays football with his friends in the park.", q: "What does Tom do on Saturdays?", o: ["He plays football.", "He works in a bank.", "He stays at home.", "He visits his family."], a: 0 },
+    { id: "r2", sec: "read", lv: "B1", p: "Due to heavy traffic this morning, the 9 a.m. training session will now begin at 10:30. Lunch will be served at the usual time in the same room.", q: "What has changed?", o: ["The start time of the training.", "The time of lunch.", "The location of the training.", "The training has been cancelled."], a: 0 },
+    { id: "r3", sec: "read", lv: "B2", p: "Although remote work offers greater flexibility, several studies suggest that employees who never meet in person may find it harder to build trust with their colleagues.", q: "What is the main point of the text?", o: ["Remote work is flexible but can make building trust harder.", "Remote work always destroys trust between colleagues.", "Most employees prefer working in the office.", "Remote workers are more productive than office workers."], a: 0 },
+    { id: "r4", sec: "read", lv: "C1", p: "The committee's endorsement of the proposal was, at best, lukewarm; while it stopped short of rejecting the plan outright, it attached so many conditions that implementation now seems unlikely.", q: "How did the committee respond to the proposal?", o: ["It did not reject it, but its conditions make it hard to carry out.", "It enthusiastically supported the proposal.", "It rejected the proposal completely.", "It postponed the decision until a later meeting."], a: 0 },
+    { id: "l1", sec: "listen", lv: "A2", audio: "The shop opens at nine o'clock in the morning and closes at six in the evening.", rate: 0.9, q: "What time does the shop close?", o: ["At six.", "At nine.", "At seven.", "At five."], a: 0 },
+    { id: "l2", sec: "listen", lv: "B1", audio: "I'm afraid I can't make it to dinner tonight. I have to finish a report for my boss by tomorrow morning.", rate: 0.95, q: "Why can't the speaker come to dinner?", o: ["The speaker has work to finish.", "The speaker is feeling sick.", "The speaker forgot about the dinner.", "The speaker doesn't like the restaurant."], a: 0 },
+    { id: "l3", sec: "listen", lv: "B2", audio: "Sales in the first quarter were slightly lower than expected, but we're confident that the new marketing campaign will turn things around.", rate: 1, q: "How does the speaker feel about the future?", o: ["Optimistic", "Disappointed", "Worried", "Indifferent"], a: 0 },
+    { id: "l4", sec: "listen", lv: "C1", audio: "Had we known about the supply issues earlier, we could have adjusted our production schedule and avoided most of the delays.", rate: 1.05, q: "What does the speaker mean?", o: ["They learned about the supply problems too late.", "They successfully avoided all the delays.", "They ignored the warnings about supply issues.", "The supply issues did not affect production."], a: 0 }
+  ];
+  const PT_SPEAK = [
+    { lv: "B1", s: "Could you send me the report before the meeting tomorrow?" },
+    { lv: "C1", s: "Despite the unexpected setbacks, the team managed to deliver the project ahead of schedule." }
+  ];
+  let T = null;
+  let ptRec = null, ptListening = false;
+
+  function shuffled(n) {
+    const a = Array.from({ length: n }, (_, i) => i);
+    for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+  function showTest(on) {
+    stopSpeech();
+    if (listening && rec) rec.abort();
+    if (ptRec) { try { ptRec.abort(); } catch (e) {} }
+    $("testView").hidden = !on;
+    $("studyView").hidden = on;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function startTest() {
+    T = { i: 0, perm: PT.map((q) => shuffled(q.o.length)), ans: {}, speak: PT_SPEAK.map(() => null), si: 0, phase: "mc" };
+    showTest(true);
+    renderTest();
+  }
+  function exitTest() { T = null; showTest(false); renderPlacementEntry(); }
+
+  function testHead(label, pos, total) {
+    return '<div class="card-top"><span class="daytag">' + esc(label) + '</span><span class="counter">' + pos + " / " + total +
+      '</span><button class="btn small ghost" data-pt="quit">離開測驗</button></div>' +
+      '<div class="progress" aria-hidden="true"><div class="bar" style="width:' + (pos / total * 100) + '%"></div></div>';
+  }
+  function renderTest() {
+    const v = $("testView");
+    if (!T) return;
+    if (T.phase === "result") { renderResult(); return; }
+    if (T.phase === "speak") {
+      const sp = PT_SPEAK[T.si];
+      const got = T.speak[T.si];
+      v.innerHTML = testHead("口說跟讀（選做）", PT.length + T.si + 1, PT.length + PT_SPEAK.length) +
+        '<p class="tq-zh">請先按 🔊 聽一次，再按 🎤 唸出下面的句子。沒有麥克風可以直接跳過，不影響等級判定。</p>' +
+        '<p class="tq">' + esc(sp.s) + "</p>" +
+        '<div class="tts"><button class="btn" data-pt="say" data-rate="1">🔊 正常發音</button><button class="btn" data-pt="say" data-rate="0.6">🐢 慢速朗讀</button></div>' +
+        '<div class="mic-row"><button class="btn mic" id="ptMic" data-pt="mic">🎤 開啟麥克風跟讀</button><p class="hint" id="ptHint">' +
+        (SR ? "唸完停頓一下會自動評分。" : "這個瀏覽器不支援語音辨識，請按「跳過」。") + "</p></div>" +
+        '<div class="transcript' + (got ? "" : " placeholder") + '" id="ptTranscript">' + (got ? esc(got.t) : "你唸出的英文會顯示在這裡") + "</div>" +
+        (got ? '<div class="result ' + (got.s >= 90 ? "good" : got.s >= 70 ? "warn" : "bad") + '"><span class="num">' + got.s + '%</span><span class="lab">' +
+          (got.s >= 90 ? "Awesome!" : got.s >= 70 ? "Good job" : "Try again") + "</span></div>" : "") +
+        '<div class="test-nav"><button class="btn" data-pt="back">← 上一步</button><button class="btn ' + (got ? "primary" : "") + '" data-pt="snext">' +
+        (got ? (T.si < PT_SPEAK.length - 1 ? "下一句 →" : "看測驗結果 →") : "跳過 →") + "</button></div>";
+      return;
+    }
+    const q = PT[T.i];
+    const perm = T.perm[T.i];
+    const chosen = T.ans[T.i];
+    const longOpts = q.o.some((o) => o.length > 22);
+    let html = testHead(SEC_NAME[q.sec], T.i + 1, PT.length + PT_SPEAK.length);
+    if (q.p) html += '<div class="passage">' + esc(q.p) + "</div>";
+    if (q.audio) {
+      html += synth
+        ? '<div class="listen-box"><button class="btn primary" data-pt="play">🔊 播放音檔</button><button class="btn" data-pt="playslow">🐢 慢速</button><p>可重複播放。請不要看文字，只用聽的作答。</p></div>'
+        : '<div class="passage">（此瀏覽器無法朗讀，改為閱讀）' + esc(q.audio) + "</div>";
+    }
+    html += '<p class="tq">' + esc(q.q) + "</p>";
+    html += '<div class="opts' + (longOpts ? " long" : "") + '">' + perm.map((oi, k) =>
+      '<button class="opt" data-opt="' + oi + '" aria-pressed="' + (chosen === oi) + '"><span class="key">' + "ABCD"[k] + "</span><span>" + esc(q.o[oi]) + "</span></button>").join("") + "</div>";
+    html += '<div class="test-nav"><button class="btn" data-pt="prev"' + (T.i === 0 ? " disabled" : "") + '>← 上一題</button>' +
+      '<button class="btn primary" data-pt="next"' + (chosen === undefined ? " disabled" : "") + ">" + (T.i === PT.length - 1 ? "進入口說 →" : "下一題 →") + "</button></div>";
+    v.innerHTML = html;
+  }
+
+  function ptListen() {
+    if (!SR) return;
+    if (ptListening && ptRec) { ptRec.stop(); return; }
+    stopSpeech();
+    const idx = T.si;
+    let finalText = "", interimText = "", errored = false;
+    ptRec = new SR();
+    ptRec.lang = "en-US"; ptRec.interimResults = true; ptRec.continuous = false;
+    const btn = () => $("ptMic"), hint = (m, err) => { const h = $("ptHint"); if (h) { h.textContent = m; h.classList.toggle("error", !!err); } };
+    ptRec.onstart = () => { ptListening = true; const b = btn(); if (b) { b.classList.add("listening"); b.textContent = "⏹ 停止聆聽"; } hint("正在聆聽…"); };
+    ptRec.onresult = (e) => {
+      finalText = ""; interimText = "";
+      for (let i = 0; i < e.results.length; i++) { const r = e.results[i]; if (r.isFinal) finalText += r[0].transcript; else interimText += r[0].transcript; }
+      const t = $("ptTranscript"); if (t) { t.classList.remove("placeholder"); t.textContent = (finalText + " " + interimText).trim(); }
+    };
+    ptRec.onerror = (e) => { if (e.error === "aborted") return; errored = true; hint(SR_ERRORS[e.error] || ("語音辨識錯誤：" + e.error), true); };
+    ptRec.onend = () => {
+      ptListening = false;
+      const b = btn(); if (b) { b.classList.remove("listening"); b.textContent = "🎤 開啟麥克風跟讀"; }
+      const text = (finalText || interimText).trim();
+      if (text && T && T.phase === "speak" && T.si === idx) {
+        T.speak[idx] = { s: similarity(PT_SPEAK[idx].s, text).score, t: text };
+        renderTest();
+      } else if (!text && !errored) hint("沒有辨識到內容，請再試一次，或按跳過。", true);
+      ptRec = null;
+    };
+    try { ptRec.start(); } catch (err) { hint("無法啟動麥克風：" + err.message, true); }
+  }
+
+  function computePlacement() {
+    const byLevel = {}, bySec = {}, wrong = [];
+    LEVELS.forEach((l) => { byLevel[l] = { c: 0, n: 0 }; });
+    Object.keys(SEC_NAME).forEach((s) => { bySec[s] = { c: 0, n: 0 }; });
+    let correct = 0;
+    PT.forEach((q, qi) => {
+      const ok = T.ans[qi] === q.a;
+      byLevel[q.lv].n++; bySec[q.sec].n++;
+      if (ok) { byLevel[q.lv].c++; bySec[q.sec].c++; correct++; }
+      else wrong.push({ id: q.id, sec: q.sec, lv: q.lv, q: q.q, pick: T.ans[qi] === undefined ? "未作答" : q.o[T.ans[qi]], right: q.o[q.a] });
+    });
+    // 由低往高，連續達 4/6 以上才算通過該級；下一級答對一半以上加「+」
+    let passed = -1;
+    for (let i = 0; i < LEVELS.length; i++) { if (byLevel[LEVELS[i]].c >= 4) passed = i; else break; }
+    let level;
+    if (passed < 0) level = byLevel.A2.c >= 3 ? "A2" : "A1–A2";
+    else {
+      level = LEVELS[passed];
+      const next = LEVELS[passed + 1];
+      if (next && byLevel[next].c >= 3) level += "+";
+    }
+    const speak = T.speak.map((x, i) => x ? { lv: PT_SPEAK[i].lv, s: x.s, t: x.t } : null);
+    return { date: today(), ts: Date.now(), level, correct, total: PT.length, byLevel, bySec, wrong, speak };
+  }
+  function adviceFor(p) {
+    const base = p.level.replace("+", "");
+    let weakest = null;
+    Object.keys(p.bySec).forEach((s) => { const r = p.bySec[s].c / p.bySec[s].n; if (!weakest || r < weakest.r) weakest = { s, r }; });
+    let msg;
+    if (base === "A1–A2" || base === "A2") msg = "目前的 B1 題庫對你略難。建議改用 A2–B1 題庫：先打好日常生活與基礎職場字彙。";
+    else if (base === "B1") msg = p.level.endsWith("+") ? "你正在往 B2 前進，目前的 B1 題庫可以輕鬆完成，下個月可升級到 B1–B2。" : "目前的 B1 字彙加強題庫正適合你，照 30 天計畫進行即可。";
+    else if (base === "B2") msg = "目前的 B1 題庫對你偏簡單。建議升級為 B2–C1 題庫，加強商務搭配詞與較長句型。";
+    else msg = "你已具備 C1 程度，建議使用 C1 進階題庫：慣用語、學術／商務搭配詞與正式語氣表達。";
+    return { msg, weakest: weakest ? SEC_NAME[weakest.s] : "" };
+  }
+  function targetRange(level) {
+    const b = level.replace("+", "");
+    return b === "A1–A2" ? "A2" : b === "A2" ? "A2–B1" : b === "B1" ? (level.endsWith("+") ? "B1–B2" : "B1") : b === "B2" ? "B2–C1" : "C1";
+  }
+  function meter(label, c, n) {
+    const r = n ? c / n : 0;
+    return '<div class="meter"><b>' + esc(label) + '</b><div class="track"><div class="fill ' + (r < 0.5 ? "low" : r < 0.67 ? "mid" : "") +
+      '" style="width:' + Math.round(r * 100) + '%"></div></div><span>' + c + "/" + n + "</span></div>";
+  }
+  function renderResult() {
+    const p = S.placement;
+    const v = $("testView");
+    if (!p) { exitTest(); return; }
+    const adv = adviceFor(p);
+    const sp = (p.speak || []).filter(Boolean);
+    v.innerHTML =
+      '<div class="card-top"><span class="daytag">程度測驗結果 · ' + esc(p.date) + '</span><button class="btn small ghost" data-pt="quit">回到單字卡</button></div>' +
+      '<div><p class="label">估計 CEFR 等級</p><div class="lvl-big">' + esc(p.level) + '</div><p class="tq-zh">選擇題答對 ' + p.correct + " / " + p.total + " 題</p></div>" +
+      '<div class="advice">' + esc(adv.msg) + (adv.weakest ? " 你目前最弱的是「" + esc(adv.weakest) + "」，新題庫會加強這部分。" : "") + "</div>" +
+      '<div class="res-grid"><div><p class="label">各等級答對</p><div class="meter-list">' +
+        LEVELS.map((l) => meter(l, p.byLevel[l].c, p.byLevel[l].n)).join("") + '</div></div>' +
+      '<div><p class="label">各技能答對</p><div class="meter-list">' +
+        Object.keys(SEC_NAME).map((s) => meter(SEC_NAME[s], p.bySec[s].c, p.bySec[s].n)).join("") + "</div></div></div>" +
+      '<div><p class="label">口說跟讀</p><p>' + (sp.length ? sp.map((x) => x.lv + " 句 " + x.s + " 分").join("　") : "未測（沒關係，平常在單字卡跟讀也會記錄）") + "</p></div>" +
+      (p.wrong.length ? '<details><summary class="label" style="cursor:pointer">答錯的題目（' + p.wrong.length + '）</summary><ol class="wrong-list">' +
+        p.wrong.map((w) => "<li>" + esc(w.q) + "<br><small>" + SEC_NAME[w.sec] + " " + w.lv + "｜你選：" + esc(w.pick) + "｜正解：" + esc(w.right) + "</small></li>").join("") +
+        "</ol></details>" : "") +
+      '<div class="export-actions"><button class="btn primary" data-pt="copy">📋 複製測驗結果（貼給 AI 出題）</button><button class="btn" data-pt="retake">重新測驗</button></div>' +
+      '<label class="sr" for="ptOut">測驗結果內容</label><textarea id="ptOut" readonly hidden style="width:100%;min-height:200px;font:13px/1.6 ui-monospace,Consolas,monospace;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px"></textarea>';
+  }
+  function placementText(p) {
+    const adv = adviceFor(p);
+    const L = [];
+    L.push("【英語程度測驗結果】");
+    L.push("測驗日期：" + p.date);
+    L.push("估計程度：CEFR " + p.level + "（選擇題答對 " + p.correct + " / " + p.total + "）");
+    L.push("各等級：" + LEVELS.map((l) => l + " " + p.byLevel[l].c + "/" + p.byLevel[l].n).join("｜"));
+    L.push("各技能：" + Object.keys(SEC_NAME).map((s) => SEC_NAME[s] + " " + p.bySec[s].c + "/" + p.bySec[s].n).join("｜"));
+    const sp = (p.speak || []).filter(Boolean);
+    L.push("口說跟讀：" + (sp.length ? sp.map((x) => x.lv + " 句 " + x.s + " 分（辨識為：" + x.t + "）").join("｜") : "未測"));
+    L.push("");
+    L.push("答錯題目：");
+    if (!p.wrong.length) L.push("　（全對）");
+    p.wrong.forEach((w) => L.push("　- [" + SEC_NAME[w.sec] + " " + w.lv + "] " + w.q + "（我選：" + w.pick + "；正解：" + w.right + "）"));
+    L.push("");
+    L.push("請求：請根據以上結果，為我重新設計「30 天英語能力提升計畫」題庫，程度約 CEFR " + targetRange(p.level) +
+      "，每天 4 個實用職場與生活單字，並加強我較弱的「" + adv.weakest + "」。請依照目前網頁的格式輸出：每天一個主題，每個單字包含 [單字, KK音標, 詞性, 中文解釋, 英文例句, 例句中文翻譯]。");
+    return L.join("\n");
+  }
+  function copyPlacement() {
+    const text = placementText(S.placement);
+    const out = $("ptOut");
+    out.value = text; out.hidden = false;
+    const fallback = () => {
+      out.focus(); out.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      toast(ok ? "已複製測驗結果" : "無法自動複製，文字已選取，請按 Ctrl+C 複製");
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => toast("已複製測驗結果，貼給 AI 就能出題"), fallback);
+    else fallback();
+  }
+  function renderPlacementEntry() {
+    const p = S.placement;
+    $("ptBanner").hidden = !!p;
+    const chip = $("ptChip");
+    chip.hidden = !p;
+    if (p) chip.textContent = "我的程度：" + p.level;
+  }
+
+  $("testView").addEventListener("click", (e) => {
+    if (!T && !S.placement) return;
+    const opt = e.target.closest("[data-opt]");
+    if (opt && T && T.phase === "mc") {
+      T.ans[T.i] = parseInt(opt.dataset.opt, 10);
+      renderTest();
+      return;
+    }
+    const b = e.target.closest("[data-pt]");
+    if (!b) return;
+    const act = b.dataset.pt;
+    if (act === "quit") { exitTest(); return; }
+    if (act === "copy") { copyPlacement(); return; }
+    if (act === "retake") { startTest(); return; }
+    if (!T) return;
+    const q = PT[T.i];
+    if (act === "play") speak(q.audio, q.rate || 1, b);
+    else if (act === "playslow") speak(q.audio, 0.7, b);
+    else if (act === "prev" && T.i > 0) { stopSpeech(); T.i--; renderTest(); }
+    else if (act === "next" && T.ans[T.i] !== undefined) {
+      stopSpeech();
+      if (T.i < PT.length - 1) T.i++; else { T.phase = "speak"; T.si = 0; }
+      renderTest();
+    }
+    else if (act === "say") speak(PT_SPEAK[T.si].s, parseFloat(b.dataset.rate), b);
+    else if (act === "mic") ptListen();
+    else if (act === "back") {
+      stopSpeech(); if (ptRec) ptRec.abort();
+      if (T.si > 0) T.si--; else { T.phase = "mc"; T.i = PT.length - 1; }
+      renderTest();
+    }
+    else if (act === "snext") {
+      stopSpeech(); if (ptRec) ptRec.abort();
+      if (T.si < PT_SPEAK.length - 1) { T.si++; renderTest(); }
+      else {
+        S.placement = computePlacement(); save();
+        T.phase = "result"; renderTest(); renderPlacementEntry();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
+  });
+  $("ptOpen").addEventListener("click", startTest);
+  $("ptStart").addEventListener("click", startTest);
+  $("ptChip").addEventListener("click", () => { T = { phase: "result" }; showTest(true); renderResult(); });
+
+  /* ---------- 同步後重新整理畫面 ---------- */
+  function applyState(next) {
+    const before = JSON.stringify(S);
+    S = normalizeState(next);
+    writeLocal();
+    if (JSON.stringify(S) === before) return false;
+    if (listening || ptListening) { renderStats(); renderChips(); renderNotebook(); renderPlacementEntry(); }
+    else renderAll();
+    return true;
+  }
+
+  /* ---------- A. 進度碼 ---------- */
+  const CODE_PREFIX = "ENG30-";
+  function encodeCode(obj) {
+    const bytes = new TextEncoder().encode(JSON.stringify(obj));
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return CODE_PREFIX + btoa(bin);
+  }
+  function decodeCode(text) {
+    const t = String(text).replace(/\s+/g, "");
+    if (t.indexOf(CODE_PREFIX) !== 0) throw new Error("進度碼要以 ENG30- 開頭，請確認有完整複製。");
+    let bin;
+    try { bin = atob(t.slice(CODE_PREFIX.length)); } catch (e) { throw new Error("進度碼不完整或被截斷，請重新複製一次。"); }
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const o = JSON.parse(new TextDecoder().decode(bytes));
+    if (!o || typeof o !== "object" || typeof o.scores !== "object") throw new Error("這不是有效的進度資料。");
+    return o;
+  }
+  function codeUI(mode) {
+    const box = $("codeBox");
+    box.hidden = !mode;
+    $("codeImportActions").hidden = mode !== "import";
+    box.readOnly = mode === "export";
+  }
+  $("codeExport").addEventListener("click", () => {
+    const code = encodeCode(S);
+    codeUI("export");
+    const box = $("codeBox");
+    box.value = code;
+    const fallback = () => { box.focus(); box.select(); toast("已選取進度碼，請按 Ctrl+C（手機長按）複製"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(() => toast("進度碼已複製，貼到另一台裝置的「匯入」"), fallback);
+    else fallback();
+  });
+  $("codeImportOpen").addEventListener("click", () => {
+    codeUI("import");
+    const box = $("codeBox");
+    box.value = "";
+    box.focus();
+  });
+  $("codeCancel").addEventListener("click", () => codeUI(null));
+  function importCode(replace) {
+    let incoming;
+    try { incoming = decodeCode($("codeBox").value); }
+    catch (e) { toast(e.message || "無法讀取進度碼"); return; }
+    let next;
+    if (replace) { next = normalizeState(incoming); next.resetAt = Date.now(); next.updatedAt = Date.now(); }
+    else {
+      // 手動合併是使用者明確要這份資料，所以不因「本機較晚重設過」而捨棄它
+      incoming.resetAt = Math.max(incoming.resetAt || 0, S.resetAt || 0);
+      next = mergeState(S, incoming); next.updatedAt = Date.now();
+    }
+    applyState(next);
+    renderAll();
+    save();
+    codeUI(null);
+    toast(replace ? "已用進度碼取代目前進度" : "已合併進度碼");
+  }
+  $("codeMerge").addEventListener("click", () => importCode(false));
+  $("codeReplace").addEventListener("click", () => importCode(true));
+
+  /* ---------- B. GitHub Gist 自動同步 ---------- */
+  const SYNC_KEY = "eng30-sync";          // token 與 Gist ID 只存在本機，不會放進進度碼或 Gist
+  const GIST_FILE = "eng30-progress.json";
+  let SY = (function () { try { return JSON.parse(localStorage.getItem(SYNC_KEY) || "{}") || {}; } catch (e) { return {}; } })();
+  let syncTimer = 0, syncing = false, syncAgain = false;
+  const connected = () => !!(SY.token && SY.gistId);
+  function saveSync() { try { localStorage.setItem(SYNC_KEY, JSON.stringify(SY)); } catch (e) {} }
+  function setSyncStatus(msg, kind) {
+    const el = $("syncStatus");
+    el.textContent = msg;
+    el.className = "sync-status" + (kind ? " " + kind : "");
+  }
+  function hhmm(ts) { const d = new Date(ts); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); }
+  function renderSyncUI() {
+    $("gistSetup").hidden = connected();
+    $("gistConnected").hidden = !connected();
+    $("gistIdShow").textContent = SY.gistId || "";
+    if (!connected()) setSyncStatus("尚未連線雲端同步");
+    else if (SY.last) setSyncStatus("已同步 · " + hhmm(SY.last), "ok");
+  }
+  async function gh(path, opts) {
+    let r;
+    try {
+      r = await fetch("https://api.github.com" + path, Object.assign({}, opts || {}, {
+        headers: { Authorization: "Bearer " + SY.token, Accept: "application/vnd.github+json", "Content-Type": "application/json" }
+      }));
+    } catch (e) {
+      const err = new Error("net"); err.status = 0; throw err;
+    }
+    if (!r.ok) { const err = new Error("http " + r.status); err.status = r.status; throw err; }
+    return r.status === 204 ? null : r.json();
+  }
+  function syncErrorText(e) {
+    if (e.status === 401) return "Token 無效或已過期，請中斷連線後重新輸入。";
+    if (e.status === 403) return "GitHub 拒絕存取：token 沒有 gist 權限，或短時間內請求太多次。";
+    if (e.status === 404) return "找不到這個 Gist：ID 錯誤，或 token 沒有 gist 權限。";
+    if (e.status === 0) return "無法連線到 GitHub。請確認網路；在 claude.ai 預覽畫面中無法使用雲端同步。";
+    if (e instanceof SyntaxError) return "雲端資料格式錯誤，請用進度碼重新匯入後再同步。";
+    return "同步失敗（" + (e.status || e.message) + "）";
+  }
+  async function findOrCreateGist() {
+    const list = await gh("/gists?per_page=100");
+    const found = (list || []).find((g) => g.files && g.files[GIST_FILE]);
+    if (found) return { id: found.id, created: false };
+    const g = await gh("/gists", {
+      method: "POST",
+      body: JSON.stringify({ description: "30 天英語跟讀卡 · 學習進度同步（請勿公開）", public: false, files: { [GIST_FILE]: { content: JSON.stringify(S) } } })
+    });
+    return { id: g.id, created: true };
+  }
+  async function pullRemote() {
+    const g = await gh("/gists/" + SY.gistId);
+    const f = g && g.files && g.files[GIST_FILE];
+    if (!f) return null;
+    let content = f.content;
+    if (f.truncated && f.raw_url) content = await (await fetch(f.raw_url)).text();
+    return content ? JSON.parse(content) : null;
+  }
+  function pushRemote(keepalive) {
+    return gh("/gists/" + SY.gistId, {
+      method: "PATCH", keepalive: !!keepalive,
+      body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(S) } } })
+    });
+  }
+  async function syncNow(opts) {
+    opts = opts || {};
+    if (!connected()) return;
+    if (syncing) { syncAgain = true; return; }
+    clearTimeout(syncTimer); syncTimer = 0;
+    syncing = true;
+    setSyncStatus("同步中…", "busy");
+    try {
+      const remote = await pullRemote();
+      if (remote) {
+        const changed = applyState(mergeState(S, remote));
+        if (changed && opts.announce) toast("已從雲端載入最新進度");
+      }
+      await pushRemote();
+      SY.last = Date.now(); saveSync();
+      setSyncStatus("已同步 · " + hhmm(SY.last), "ok");
+      if (opts.toastOk) toast("同步完成");
+    } catch (e) {
+      setSyncStatus(syncErrorText(e), "err");
+      if (opts.toastOk) toast("同步失敗");
+    } finally {
+      syncing = false;
+      if (syncAgain) { syncAgain = false; schedulePush(); }
+    }
+  }
+  function schedulePush() {
+    if (!connected()) return;
+    clearTimeout(syncTimer);
+    setSyncStatus("有新進度，等待上傳…", "busy");
+    syncTimer = setTimeout(() => syncNow(), 3000);
+  }
+  $("gistForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const token = $("gistToken").value.trim();
+    const idIn = $("gistIdInput").value.trim().replace(/^.*\//, "");
+    if (!token) { toast("請先貼上 GitHub token"); return; }
+    SY = { token: token, gistId: "" };
+    setSyncStatus("連線中…", "busy");
+    try {
+      let created = false;
+      if (idIn) SY.gistId = idIn;
+      else { const r = await findOrCreateGist(); SY.gistId = r.id; created = r.created; }
+      saveSync();
+      $("gistToken").value = "";
+      renderSyncUI();
+      await syncNow({ announce: true });
+      toast(created ? "已建立私人 Gist 並開始同步" : "已連線，進度已合併");
+    } catch (err) {
+      SY = {}; saveSync();
+      renderSyncUI();
+      setSyncStatus(syncErrorText(err), "err");
+    }
+  });
+  $("gistSyncNow").addEventListener("click", () => syncNow({ announce: true, toastOk: true }));
+  $("gistDisconnect").addEventListener("click", () => {
+    clearTimeout(syncTimer);
+    SY = {}; saveSync();
+    renderSyncUI();
+    toast("已中斷連線並移除這台裝置上的 token");
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (!connected()) return;
+    if (document.visibilityState === "visible") syncNow({ announce: true });
+    else if (syncTimer) { clearTimeout(syncTimer); syncTimer = 0; pushRemote(true).then(() => { SY.last = Date.now(); saveSync(); }, () => {}); }
+  });
+
+  /* ---------- 環境提示 ---------- */
+  const notes = [];
+  if (!synth) notes.push("此瀏覽器不支援語音朗讀");
+  if (!SR) notes.push("此瀏覽器不支援語音辨識（請用 Chrome／Edge）");
+  if (!storageOK) notes.push("瀏覽器封鎖了本機儲存，進度將無法保存");
+  $("envNote").textContent = notes.length ? "⚠ " + notes.join("；") :
+    "進度自動儲存在此瀏覽器。發音可離線使用；麥克風跟讀需連網（Chrome／Edge 使用雲端辨識）。";
+
+  renderAll();
+  renderSyncUI();
+  if (connected()) syncNow({ announce: true });
+})();
+</script>
+</body>
+</html>
