@@ -64,7 +64,8 @@ p { margin: 0; }
 .top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
 .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
 h1 { font-size: clamp(24px, 4vw, 32px); font-weight: 800; letter-spacing: -.01em; }
-.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; flex: 1 1 420px; max-width: 560px; }
+.stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; flex: 1 1 480px; max-width: 720px; }
+.stat small { display: block; font-size: 11px; color: var(--muted); line-height: 1.3; }
 .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px 12px; min-width: 0; }
 .stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1.3; }
 .stat span { font-size: 12px; color: var(--muted); }
@@ -262,6 +263,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 
 @media (max-width: 560px) {
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat:last-child { grid-column: 1 / -1; }
   .card-nav .btn { padding: 8px 10px; }
   .tts .btn { flex: 1 1 auto; }
 }
@@ -286,6 +288,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       <div class="stat"><b id="stAvg">–</b><span>平均跟讀分</span></div>
       <div class="stat"><b id="stAtt">0</b><span>跟讀次數</span></div>
       <div class="stat"><b id="stHard">0</b><span>錯題本</span></div>
+      <div class="stat"><b id="stTime">0 分</b><span>今日學習</span><small id="stWeek">近 7 天 0 分</small></div>
     </div>
   </header>
   <div class="progress" aria-hidden="true"><div class="bar" id="progressBar"></div></div>
@@ -384,6 +387,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
           <li>90 分以上 Awesome、70–89 分 Good job、70 分以下 Try again。</li>
           <li>鍵盤 <kbd>←</kbd> <kbd>→</kbd> 切換卡片。</li>
           <li>進度自動存在這台電腦的瀏覽器裡。</li>
+          <li>學習時間只在網頁開著、有操作時累計，閒置超過 1 分鐘會暫停。</li>
         </ul>
       </section>
     </aside>
@@ -636,7 +640,8 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   }
   // mod：記錄「完成天數／錯題本」每個勾選最後修改的時間，跨裝置合併時以較新者為準
   // resetAt：重設或完全取代的時間，比它舊的資料在合併時會被捨棄
-  function freshState() { return { day: 1, card: 0, done: {}, scores: {}, hard: {}, mod: {}, started: today(), updatedAt: 0, resetAt: 0 }; }
+  function freshState() { return { day: 1, card: 0, done: {}, scores: {}, hard: {}, mod: {}, time: {}, started: today(), updatedAt: 0, resetAt: 0 }; }
+  // time：{ 裝置ID: { "YYYY-MM-DD": 秒數 } }，按裝置分開記錄，合併時每個裝置每天取較大值，再把各裝置加總
   function load() {
     const def = freshState();
     try {
@@ -663,7 +668,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   function touch(kind, id) { S.mod[kind + ":" + id] = Date.now(); }
   function normalizeState(o) {
     const s = Object.assign(freshState(), o && typeof o === "object" ? o : {});
-    ["done", "scores", "hard", "mod"].forEach((k) => { if (!s[k] || typeof s[k] !== "object") s[k] = {}; });
+    ["done", "scores", "hard", "mod", "time"].forEach((k) => { if (!s[k] || typeof s[k] !== "object") s[k] = {}; });
     s.day = Math.min(Math.max(parseInt(s.day, 10) || 1, 1), TOTAL);
     s.card = Math.min(Math.max(parseInt(s.card, 10) || 0, 0), DAYS[s.day - 1].w.length - 1);
     return s;
@@ -695,6 +700,11 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       else v = (tb > ta ? b : a)[coll][id];               // 以最後修改者為準（包含「移除」）
       if (v) out[coll][id] = v; else delete out[coll][id];
       if (ta || tb) out.mod[mk] = Math.max(ta, tb);
+    });
+    Object.keys(b.time).forEach((dev) => {
+      const bd = b.time[dev] || {};
+      const od = out.time[dev] = out.time[dev] || {};
+      Object.keys(bd).forEach((d) => { if ((bd[d] || 0) > (od[d] || 0)) od[d] = bd[d]; });
     });
     const pa = a.placement, pb = b.placement;
     if (pb && (!pa || (pb.ts || 0) > (pa.ts || 0) || (!pb.ts && !pa.ts && pb.date > pa.date))) out.placement = pb;
@@ -1021,7 +1031,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   }
   function renderAll() {
     renderDaySelect(); renderChips(); renderStats(); renderCard(); renderNotebook();
-    renderPlacementEntry();
+    renderPlacementEntry(); renderTimeTile();
   }
 
   function goTo(day, card) {
@@ -1068,6 +1078,10 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       if (a) perDay.push("Day " + (i + 1) + " " + Math.round(s / a) + " 分");
     });
     if (perDay.length) lines.push("　各天平均：" + perDay.join("｜"));
+    lines.push("");
+    const tm = timeStats();
+    lines.push("■ 學習時間：累計 " + fmtDur(tm.total) + "（" + tm.days.length + " 個練習日），平均每個練習日 " + fmtDur(tm.days.length ? tm.total / tm.days.length : 0) + "，近 7 天 " + fmtDur(tm.week));
+    if (tm.days.length) lines.push("　每日：" + tm.days.map((x) => x[0].slice(5) + " " + fmtDur(x[1])).join("｜"));
     lines.push("");
     const hardKeys = Object.keys(S.hard).sort((a, b) => {
       const A = a.split("-").map(Number), B = b.split("-").map(Number);
@@ -1458,6 +1472,82 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   $("ptStart").addEventListener("click", startTest);
   $("ptChip").addEventListener("click", () => { T = { phase: "result" }; showTest(true); renderResult(); });
 
+  /* ---------- 學習計時（只算畫面可見、有操作的時間） ---------- */
+  const DEV_KEY = "eng30-device";
+  const DEVICE = (function () {
+    try {
+      let d = localStorage.getItem(DEV_KEY);
+      if (!d) { d = Math.random().toString(36).slice(2, 8); localStorage.setItem(DEV_KEY, d); }
+      return d;
+    } catch (e) { return "tmp" + Math.random().toString(36).slice(2, 6); }
+  })();
+  const IDLE_MS = 60000;
+  let lastAct = Date.now(), tickLast = Date.now(), tickAcc = 0, timeDirty = false, lastFlush = Date.now();
+  ["pointerdown", "keydown", "touchstart", "scroll", "input"].forEach((ev) =>
+    document.addEventListener(ev, () => { lastAct = Date.now(); }, { passive: true, capture: true }));
+  function ymd(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function daysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return ymd(d); }
+  function secOn(date) {
+    let t = 0;
+    Object.keys(S.time).forEach((dev) => { t += (S.time[dev] && S.time[dev][date]) || 0; });
+    return t;
+  }
+  function timeStats() {
+    const byDate = {};
+    Object.keys(S.time).forEach((dev) => Object.keys(S.time[dev] || {}).forEach((d) => { byDate[d] = (byDate[d] || 0) + S.time[dev][d]; }));
+    const days = Object.keys(byDate).filter((d) => byDate[d] >= 60).sort().map((d) => [d, byDate[d]]);
+    let total = 0, week = 0;
+    Object.keys(byDate).forEach((d) => { total += byDate[d]; });
+    for (let i = 0; i < 7; i++) week += byDate[daysAgo(i)] || 0;
+    return { total: total, week: week, days: days };
+  }
+  function fmtDur(sec) {
+    sec = Math.round(sec);
+    if (sec > 0 && sec < 60) return "不到 1 分";
+    const m = Math.floor(sec / 60);
+    return m < 60 ? m + " 分" : Math.floor(m / 60) + " 時 " + (m % 60) + " 分";
+  }
+  function renderTimeTile() {
+    const a = $("stTime"), b = $("stWeek");
+    if (!a || !b) return;
+    let week = 0;
+    for (let i = 0; i < 7; i++) week += secOn(daysAgo(i));
+    const t1 = fmtDur(secOn(today())), t2 = "近 7 天 " + fmtDur(week);
+    if (a.textContent !== t1) a.textContent = t1;
+    if (b.textContent !== t2) b.textContent = t2;
+  }
+  function flushTime() {
+    if (!timeDirty) return;
+    timeDirty = false; lastFlush = Date.now();
+    S.updatedAt = Date.now();
+    writeLocal();
+    schedulePush();
+  }
+  function tick() {
+    const now = Date.now();
+    const dt = Math.min(now - tickLast, 3000);      // 電腦休眠或分頁被凍結時不補算
+    tickLast = now;
+    const active = document.visibilityState === "visible" &&
+      (now - lastAct < IDLE_MS || !!currentUtter || listening || ptListening);
+    if (active) {
+      tickAcc += dt;
+      if (tickAcc >= 1000) {
+        const s = Math.floor(tickAcc / 1000);
+        tickAcc -= s * 1000;
+        const mine = S.time[DEVICE] || (S.time[DEVICE] = {});
+        const d = today();
+        mine[d] = (mine[d] || 0) + s;
+        timeDirty = true;
+      }
+    }
+    if (timeDirty && now - lastFlush > 30000) flushTime();
+    renderTimeTile();
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushTime(); else tickLast = Date.now();
+  });
+  window.addEventListener("pagehide", flushTime);
+
   /* ---------- 同步後重新整理畫面 ---------- */
   function applyState(next) {
     const before = JSON.stringify(S);
@@ -1669,6 +1759,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 
   renderAll();
   renderSyncUI();
+  setInterval(tick, 1000);
   if (connected()) syncNow({ announce: true });
 })();
 </script>
