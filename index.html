@@ -765,8 +765,17 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     schedulePush();
   }
   function touch(kind, id) { S.mod[kind + ":" + id] = Date.now(); }
+  // 進度碼與 Gist 的內容來自外部：先移除 __proto__ 等特殊鍵，避免合併時寫進所有物件共用的原型
+  const BAD_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+  const badKey = (k) => BAD_KEYS.has(k);
+  function scrub(v, depth) {
+    if (!v || typeof v !== "object") return v;
+    if (depth > 8) return Array.isArray(v) ? [] : {};
+    Object.keys(v).forEach((k) => { if (badKey(k)) delete v[k]; else scrub(v[k], depth + 1); });
+    return v;
+  }
   function normalizeState(o) {
-    const s = Object.assign(freshState(), o && typeof o === "object" ? o : {});
+    const s = Object.assign(freshState(), o && typeof o === "object" ? scrub(o, 0) : {});
     ["done", "scores", "hard", "mod", "time", "habit", "hmod"].forEach((k) => { if (!s[k] || typeof s[k] !== "object") s[k] = {}; });
     s.day = Math.min(Math.max(parseInt(s.day, 10) || 1, 1), TOTAL);
     s.card = Math.min(Math.max(parseInt(s.card, 10) || 0, 0), DAYS[s.day - 1].w.length - 1);
@@ -824,6 +833,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       const p = mk.indexOf("|");
       if (p < 0) return;
       const id = mk.slice(0, p), f = mk.slice(p + 1);
+      if (badKey(id) || f.split(".").some(badKey)) return;
       const ta = a.hmod[mk] || 0, tb = b.hmod[mk] || 0;
       const va = hGet(a.habit, id, f), vb = hGet(b.habit, id, f);
       const v = ta === tb ? (va || vb) : (tb > ta ? vb : va);   // 同時間（或沒有時間）→ 聯集；否則以後改的為準
@@ -858,7 +868,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     Object.keys(a.hard).concat(Object.keys(b.hard)).forEach((k) => keys.add("hard:" + k));
     keys.forEach((mk) => {
       const coll = mk.slice(0, 4), id = mk.slice(5);
-      if (coll !== "done" && coll !== "hard") return;
+      if ((coll !== "done" && coll !== "hard") || badKey(id)) return;
       const ta = a.mod[mk] || 0, tb = b.mod[mk] || 0;
       let v;
       if (ta === tb) v = a[coll][id] || b[coll][id];      // 沒有時間資訊 → 聯集
