@@ -792,36 +792,54 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     writeLocal();
   }
 
+  /* 合併時只接受已知格式的鍵，而且只讀寫物件「自己的」屬性，不碰繼承來的 toString 等內建屬性 */
+  const own = (o, k) => !!o && typeof o === "object" && Object.prototype.hasOwnProperty.call(o, k);
+  const ownGet = (o, k) => (own(o, k) ? o[k] : undefined);
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;                                     // 打卡日期、學習時間日期
+  const HFIELD_RE = /^(ex|soak|eng|mode|todo\.[a-z]{1,20}|why\.(ex|soak|eng))$/;  // 打卡欄位
+  const DAY_RE = /^\d{1,2}$/;                                                // 完成天數：第幾天
+  const CARD_RE = /^\d{1,2}-\d{1,2}$/;                                       // 卡片：天-張
+  const DEV_RE = /^[a-z0-9]{1,16}$/;                                         // 裝置 ID
+  const validHabitKey = (id, f) => DATE_RE.test(id) && HFIELD_RE.test(f) && !f.split(".").some(badKey);
+
   /* 打卡欄位：ex / soak / eng / mode，以及 todo.<項目>、why.<習慣> */
   function hFields(rec) {
     const f = [];
     if (!rec || typeof rec !== "object") return f;
-    ["ex", "soak", "eng", "mode"].forEach((k) => { if (rec[k]) f.push(k); });
-    ["todo", "why"].forEach((g) => { if (rec[g] && typeof rec[g] === "object") Object.keys(rec[g]).forEach((k) => f.push(g + "." + k)); });
+    ["ex", "soak", "eng", "mode"].forEach((k) => { if (ownGet(rec, k)) f.push(k); });
+    ["todo", "why"].forEach((g) => {
+      const grp = ownGet(rec, g);
+      if (grp && typeof grp === "object") Object.keys(grp).forEach((k) => f.push(g + "." + k));
+    });
     return f;
   }
   function hGet(h, id, f) {
-    const r = h[id];
-    if (!r) return undefined;
+    const r = ownGet(h, id);
+    if (!r || typeof r !== "object") return undefined;
     const i = f.indexOf(".");
-    if (i < 0) return r[f];
-    const g = r[f.slice(0, i)];
-    return g ? g[f.slice(i + 1)] : undefined;
+    if (i < 0) return ownGet(r, f);
+    return ownGet(ownGet(r, f.slice(0, i)), f.slice(i + 1));
   }
   function hSet(h, id, f, v) {
     const i = f.indexOf(".");
     if (v) {
-      const r = h[id] = h[id] || {};
+      let r = ownGet(h, id);
+      if (!r || typeof r !== "object") r = h[id] = {};
       if (i < 0) r[f] = v;
-      else { const g = r[f.slice(0, i)] = r[f.slice(0, i)] || {}; g[f.slice(i + 1)] = v; }
+      else {
+        const gk = f.slice(0, i);
+        let g = ownGet(r, gk);
+        if (!g || typeof g !== "object") g = r[gk] = {};
+        g[f.slice(i + 1)] = v;
+      }
       return;
     }
-    const r = h[id];
-    if (!r) return;
+    const r = ownGet(h, id);
+    if (!r || typeof r !== "object") return;
     if (i < 0) delete r[f];
     else {
-      const gk = f.slice(0, i), g = r[gk];
-      if (g) { delete g[f.slice(i + 1)]; if (!Object.keys(g).length) delete r[gk]; }
+      const gk = f.slice(0, i), g = ownGet(r, gk);
+      if (g && typeof g === "object") { delete g[f.slice(i + 1)]; if (!Object.keys(g).length) delete r[gk]; }
     }
     if (!Object.keys(r).length) delete h[id];
   }
@@ -833,8 +851,8 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       const p = mk.indexOf("|");
       if (p < 0) return;
       const id = mk.slice(0, p), f = mk.slice(p + 1);
-      if (badKey(id) || f.split(".").some(badKey)) return;
-      const ta = a.hmod[mk] || 0, tb = b.hmod[mk] || 0;
+      if (!validHabitKey(id, f)) return;
+      const ta = Number(ownGet(a.hmod, mk)) || 0, tb = Number(ownGet(b.hmod, mk)) || 0;
       const va = hGet(a.habit, id, f), vb = hGet(b.habit, id, f);
       const v = ta === tb ? (va || vb) : (tb > ta ? vb : va);   // 同時間（或沒有時間）→ 聯集；否則以後改的為準
       hSet(out, id, f, v ? JSON.parse(JSON.stringify(v)) : undefined);
@@ -860,7 +878,9 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     out.day = newer.day; out.card = newer.card;
     if (b.started && (!a.started || b.started < a.started)) out.started = b.started;
     Object.keys(b.scores).forEach((k) => {
-      const x = a.scores[k], y = b.scores[k];
+      if (!CARD_RE.test(k)) return;
+      const x = ownGet(a.scores, k), y = ownGet(b.scores, k);
+      if (!y || typeof y !== "object") return;
       if (!x || y.att > x.att || (y.att === x.att && y.best > x.best)) out.scores[k] = y;
     });
     const keys = new Set(Object.keys(a.mod).concat(Object.keys(b.mod)));
@@ -868,18 +888,25 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     Object.keys(a.hard).concat(Object.keys(b.hard)).forEach((k) => keys.add("hard:" + k));
     keys.forEach((mk) => {
       const coll = mk.slice(0, 4), id = mk.slice(5);
-      if ((coll !== "done" && coll !== "hard") || badKey(id)) return;
-      const ta = a.mod[mk] || 0, tb = b.mod[mk] || 0;
+      if (coll === "done" ? !DAY_RE.test(id) : coll === "hard" ? !CARD_RE.test(id) : true) return;
+      const ta = Number(ownGet(a.mod, mk)) || 0, tb = Number(ownGet(b.mod, mk)) || 0;
       let v;
-      if (ta === tb) v = a[coll][id] || b[coll][id];      // 沒有時間資訊 → 聯集
-      else v = (tb > ta ? b : a)[coll][id];               // 以最後修改者為準（包含「移除」）
+      if (ta === tb) v = ownGet(a[coll], id) || ownGet(b[coll], id);   // 沒有時間資訊 → 聯集
+      else v = ownGet((tb > ta ? b : a)[coll], id);                      // 以最後修改者為準（包含「移除」）
       if (v) out[coll][id] = v; else delete out[coll][id];
       if (ta || tb) out.mod[mk] = Math.max(ta, tb);
     });
     Object.keys(b.time).forEach((dev) => {
-      const bd = b.time[dev] || {};
-      const od = out.time[dev] = out.time[dev] || {};
-      Object.keys(bd).forEach((d) => { if ((bd[d] || 0) > (od[d] || 0)) od[d] = bd[d]; });
+      if (!DEV_RE.test(dev) || badKey(dev)) return;
+      const bd = ownGet(b.time, dev);
+      if (!bd || typeof bd !== "object") return;
+      let od = ownGet(out.time, dev);
+      if (!od || typeof od !== "object") od = out.time[dev] = {};
+      Object.keys(bd).forEach((d) => {
+        if (!DATE_RE.test(d)) return;
+        const sec = Number(bd[d]) || 0;
+        if (sec > (Number(ownGet(od, d)) || 0)) od[d] = sec;
+      });
     });
     const pa = a.placement, pb = b.placement;
     if (pb && (!pa || (pb.ts || 0) > (pa.ts || 0) || (!pb.ts && !pa.ts && pb.date > pa.date))) out.placement = pb;
