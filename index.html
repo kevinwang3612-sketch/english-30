@@ -347,6 +347,57 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 .hday[aria-pressed="true"].off { opacity: 1; }
 .habit-mode { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .habit-mode p { font-size: 13px; color: var(--muted); }
+
+/* ---- 蛋白質紀錄 ---- */
+.food { display: flex; flex-direction: column; gap: 12px; }
+.food-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.food-head p { color: var(--muted); font-size: 13px; }
+.food-nav { display: flex; gap: 6px; }
+.food-nav .btn.icon { width: 36px; padding: 5px 0; }
+.food-total { display: flex; align-items: baseline; gap: 6px; }
+.food-total b { font-size: 32px; line-height: 1; font-variant-numeric: tabular-nums; }
+.food-total span { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.fmeter { height: 12px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.fmeter-fill { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .3s ease; }
+.food-left { font-size: 14px; }
+.food-tip { border-left: 4px solid var(--warn); background: var(--surface-2); border-radius: 0 12px 12px 0; padding: 8px 12px; font-size: 13px; }
+.meal-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.meal-seg button { font: inherit; font-size: 13px; cursor: pointer; padding: 6px 14px; min-height: 34px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.meal-seg button[aria-checked="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); font-weight: 600; }
+.meal-seg button:focus-visible, .fchip:focus-visible, .fcol:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.food-groups { display: flex; flex-direction: column; gap: 10px; }
+.fgroup-t { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .04em; margin-bottom: 6px; }
+.fchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fchip { font: inherit; font-size: 13px; cursor: pointer; display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px; min-height: 36px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); transition: border-color .15s ease, transform .12s ease; }
+.fchip:hover { border-color: var(--accent); transform: translateY(-1px); }
+.fchip i { font-style: normal; font-size: 12px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.food-more summary { cursor: pointer; font-size: 14px; font-weight: 600; padding: 2px 0; }
+.food-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-top: 8px; }
+.food-form input[type="text"] { flex: 1 1 140px; }
+.food-form input[type="number"], .food-form select { font: inherit; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; width: 110px; min-width: 0; }
+.food-form select { width: auto; }
+.food-form .field { flex: 0 1 auto; }
+.food-check { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+.food-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.food-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.food-log:empty { display: none; }
+.food-log li { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 10px; border-radius: 10px; background: var(--surface-2); font-size: 14px; }
+.food-log .mt { font-size: 12px; color: var(--muted); flex: none; min-width: 2.6em; }
+.food-log .fn { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.food-log .fp { font-weight: 600; font-variant-numeric: tabular-nums; flex: none; }
+.food-log .rm { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 15px; padding: 4px 8px; border-radius: 8px; }
+.food-log .rm:hover { color: var(--bad); background: var(--bad-bg); }
+.fweek { position: relative; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-top: 8px; }
+.fcol { font: inherit; color: var(--ink); background: none; border: 0; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; border-radius: 8px; min-width: 0; }
+.fbar-area { width: 100%; height: 84px; display: flex; align-items: flex-end; justify-content: center; border-radius: 8px; transition: background-color .15s ease; }
+.fcol:hover .fbar-area, .fcol[aria-pressed="true"] .fbar-area { background: var(--surface-2); }
+.fbar { width: 56%; max-width: 26px; border-radius: 4px 4px 0 0; background: var(--accent); }
+.fbar.under { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.fcol .fv { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fcol .fd { font-size: 11px; color: var(--muted); }
+.fcol[aria-pressed="true"] .fd { color: var(--ink); font-weight: 700; }
+.ftarget { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--muted); pointer-events: none; }
+.ftarget span { position: absolute; right: 0; top: -18px; font-size: 11px; color: var(--muted); background: var(--surface); padding: 0 4px; border-radius: 4px; }
 </style>
 </head>
 <body>
@@ -387,6 +438,59 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     <details id="habitDetails"><summary id="habitSummary">今天的提醒與便當</summary><ul id="habitList"></ul></details>
     <details id="habitStats"><summary>原因小日誌（近 4 週）</summary><div id="habitStatsBody"></div></details>
     <button class="btn ghost small hreset" id="habitReset" type="button">清除打卡紀錄</button>
+  </section>
+
+  <section class="panel food" id="foodPanel" aria-labelledby="foodTitle">
+    <div class="food-head">
+      <div>
+        <h3 id="foodTitle">🍱 蛋白質紀錄</h3>
+        <p id="foodDate"></p>
+      </div>
+      <div class="food-nav">
+        <button class="btn icon small" id="foodPrev" type="button" aria-label="前一天">‹</button>
+        <button class="btn small" id="foodToday" type="button">回到今天</button>
+        <button class="btn icon small" id="foodNext" type="button" aria-label="後一天">›</button>
+      </div>
+    </div>
+    <div class="food-total"><b id="foodSum">0</b><span id="foodGoal">/ 86 g</span></div>
+    <div class="fmeter" id="foodMeter" role="img" aria-label=""><div class="fmeter-fill" id="foodFill"></div></div>
+    <p class="food-left" id="foodLeft"></p>
+    <p class="food-tip" id="foodTip" hidden></p>
+    <div class="meal-seg" id="foodMeal" role="radiogroup" aria-label="記到哪一餐"></div>
+    <div class="food-groups" id="foodPresets"></div>
+    <details class="food-more">
+      <summary>＋ 自己輸入食物</summary>
+      <form class="food-form" id="foodForm">
+        <label class="sr" for="foodName">食物名稱</label>
+        <input type="text" id="foodName" maxlength="30" autocomplete="off" placeholder="例如：滷雞腿">
+        <label class="sr" for="foodGram">蛋白質公克</label>
+        <input type="number" id="foodGram" min="0" max="200" step="1" inputmode="numeric" placeholder="蛋白質 g">
+        <label class="food-check"><input type="checkbox" id="foodKeep"> 存成常用按鈕</label>
+        <button class="btn" type="submit">記錄</button>
+      </form>
+      <p class="food-note">不知道蛋白質多少？看包裝的「營養標示」，或用：肉類每 100 g 約 20–25 g、一顆蛋約 7 g。</p>
+    </details>
+    <ul class="food-log" id="foodLog"></ul>
+    <div>
+      <p class="label">近 7 天蛋白質（點長條看那天）</p>
+      <div class="fweek" id="foodWeek"></div>
+    </div>
+    <details class="food-more" id="foodSetBox">
+      <summary>目標設定</summary>
+      <form class="food-form" id="foodSetForm">
+        <label class="field"><span>體重（kg）</span><input type="number" id="foodW" min="25" max="250" step="0.1" inputmode="decimal"></label>
+        <label class="field"><span>每公斤蛋白質</span>
+          <select id="foodF">
+            <option value="1.2">1.2 g（一般維持）</option>
+            <option value="1.6">1.6 g（增肌建議）</option>
+            <option value="1.8">1.8 g</option>
+            <option value="2">2.0 g（訓練量大）</option>
+          </select></label>
+        <button class="btn" type="submit">儲存</button>
+      </form>
+      <p class="food-note" id="foodSetNote"></p>
+      <ul class="food-log" id="foodCustomList"></ul>
+    </details>
   </section>
 
 
@@ -737,7 +841,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   }
   // mod：記錄「完成天數／錯題本」每個勾選最後修改的時間，跨裝置合併時以較新者為準
   // resetAt：重設或完全取代的時間，比它舊的資料在合併時會被捨棄
-  function freshState() { return { day: 1, card: 0, done: {}, scores: {}, hard: {}, mod: {}, time: {}, habit: {}, hmod: {}, started: today(), updatedAt: 0, resetAt: 0 }; }
+  function freshState() { return { day: 1, card: 0, done: {}, scores: {}, hard: {}, mod: {}, time: {}, habit: {}, hmod: {}, food: {}, fdel: {}, fset: {}, started: today(), updatedAt: 0, resetAt: 0 }; }
   // habit：下班打卡 { "YYYY-MM-DD": { ex, soak, eng, mode, todo: {}, why: {} } }
   // hmod：打卡每個欄位最後修改的時間 { "日期|欄位": ms }，跨裝置合併時逐欄以較新者為準
   // time：{ 裝置ID: { "YYYY-MM-DD": 秒數 } }，按裝置分開記錄，合併時每個裝置每天取較大值，再把各裝置加總
@@ -784,6 +888,9 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   const DEV_RE = /^[a-z0-9]{1,16}$/;                                         // 裝置 ID
   const MOD_RE = /^(done:\d{1,2}|hard:\d{1,2}-\d{1,2})$/;                    // 完成天數／錯題本的修改時間
   const validHabitKey = (id, f) => DATE_RE.test(id) && HFIELD_RE.test(f) && !f.split(".").some(badKey);
+  const FOOD_ID_RE = /^[a-z0-9]{6,16}$/;                                     // 每筆飲食紀錄的 ID
+  const FDEL_RE = /^\d{4}-\d{2}-\d{2}\|[a-z0-9]{6,16}$/;                     // 刪除紀錄：日期|ID
+  const FOOD_F = [1.2, 1.6, 1.8, 2];                                         // 每公斤蛋白質可選的倍數
 
   /* 逐欄清理外部來的進度：鍵不符格式就丟掉，數字轉成數字，文字限制長度。
      所有路徑（載入、進度碼合併或取代、Gist 同步）都會經過這裡，畫面只會拿到乾淨的資料 */
@@ -830,7 +937,37 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       speak: (Array.isArray(p.speak) ? p.speak : []).slice(0, 4).map((x) => (x && typeof x === "object" ? { lv: cStr(x.lv, 4), s: cNum(x.s), t: cStr(x.t, 300) } : null))
     };
   }
+  // 蛋白質紀錄：{ 日期: { ID: { k: 食物代號, n: 名稱, p: 蛋白質 g, m: 餐別 b/l/d/s, ts } } }
+  function cleanFoodEntry(e) {
+    if (!e || typeof e !== "object") return undefined;
+    return {
+      k: /^[a-z0-9]{1,16}$/.test(e.k) ? e.k : "",
+      n: cStr(e.n, 30) || "食物",
+      p: Math.max(0, Math.min(200, Math.round(cNum(e.p)))),
+      m: /^[blds]$/.test(e.m) ? e.m : "s",
+      ts: cNum(e.ts)
+    };
+  }
+  // 目標設定：{ w: 體重, f: 每公斤倍數, ts, custom: [{ id, n, p }] }
+  function cleanFoodSet(v) {
+    const o = { w: 0, f: 0, ts: 0, custom: [] };
+    if (!v || typeof v !== "object") return o;
+    const w = cNum(v.w);
+    if (w >= 25 && w <= 250) o.w = Math.round(w * 10) / 10;
+    if (FOOD_F.indexOf(cNum(v.f)) >= 0) o.f = cNum(v.f);
+    o.ts = cNum(v.ts);
+    o.custom = (Array.isArray(v.custom) ? v.custom : []).slice(0, 12)
+      .filter((c) => c && typeof c === "object" && FOOD_ID_RE.test(c.id))
+      .map((c) => ({ id: c.id, n: cStr(c.n, 30) || "食物", p: Math.max(0, Math.min(200, Math.round(cNum(c.p)))) }));
+    return o;
+  }
   function cleanState(s) {
+    s.food = cMap(s.food, DATE_RE, (day) => {
+      const o = cMap(day, FOOD_ID_RE, cleanFoodEntry);
+      return Object.keys(o).length ? o : undefined;
+    });
+    s.fdel = cMap(s.fdel, FDEL_RE, cNum);
+    s.fset = cleanFoodSet(s.fset);
     s.done = cMap(s.done, DAY_RE, (v) => (v ? (typeof v === "string" ? v.slice(0, 10) : today()) : undefined));
     s.scores = cMap(s.scores, CARD_RE, (v) => (v && typeof v === "object" ? {
       att: cNum(v.att), sum: cNum(v.sum), best: cNum(v.best), last: cNum(v.last),
@@ -926,12 +1063,30 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     return { habit: out, hmod: mod };
   }
 
-  /* 合併兩份進度：a = 本機，b = 另一台裝置／雲端。下班打卡不受「重設跟讀進度」影響，永遠逐欄合併 */
+  /* 蛋白質紀錄合併：每筆紀錄有唯一 ID，兩邊聯集；刪掉的記在 fdel，任一邊刪過就不再出現。
+     目標設定以較晚儲存的那邊為準 */
+  function mergeFood(a, b) {
+    const food = {}, fdel = Object.assign({}, a.fdel);
+    Object.keys(b.fdel).forEach((k) => { fdel[k] = Math.max(cNum(ownGet(fdel, k)), cNum(b.fdel[k])); });
+    [a.food, b.food].forEach((src) => Object.keys(src).forEach((date) => {
+      const day = src[date];
+      Object.keys(day).forEach((id) => {
+        if (own(fdel, date + "|" + id)) return;
+        const tgt = own(food, date) ? food[date] : (food[date] = {});
+        if (!own(tgt, id)) tgt[id] = Object.assign({}, day[id]);
+      });
+    }));
+    const fs = cNum(b.fset.ts) > cNum(a.fset.ts) ? b.fset : a.fset;
+    return { food: food, fdel: fdel, fset: JSON.parse(JSON.stringify(fs)) };
+  }
+
+  /* 合併兩份進度：a = 本機，b = 另一台裝置／雲端。下班打卡、蛋白質紀錄不受「重設跟讀進度」影響，永遠逐筆合併 */
   function mergeState(a, b) {
     a = normalizeState(a); b = normalizeState(b);
-    const hm = mergeHabit(a, b);
+    const hm = mergeHabit(a, b), fm = mergeFood(a, b);
     const out = mergeCore(a, b);
     out.habit = hm.habit; out.hmod = hm.hmod;
+    out.food = fm.food; out.fdel = fm.fdel; out.fset = fm.fset;
     out.hmigr = 1;
     return out;
   }
@@ -1350,6 +1505,10 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     lines.push("■ 學習時間：累計 " + fmtDur(tm.total) + "（" + tm.days.length + " 個練習日），平均每個練習日 " + fmtDur(tm.days.length ? tm.total / tm.days.length : 0) + "，近 7 天 " + fmtDur(tm.week));
     if (tm.days.length) lines.push("　每日：" + tm.days.map((x) => x[0].slice(5) + " " + fmtDur(x[1])).join("｜"));
     lines.push("");
+    const fst = foodStats();
+    lines.push("■ 蛋白質：目標每天 " + fst.target + " g（體重 " + fst.w + " kg × " + fst.f + " g）；有紀錄 " + fst.days + " 天，平均 " + fst.avg + " g，達標 " + fst.hit + " 天");
+    if (fst.top.length) lines.push("　最常吃：" + fst.top.join("、"));
+    lines.push("");
     const hardKeys = Object.keys(S.hard).sort((a, b) => {
       const A = a.split("-").map(Number), B = b.split("-").map(Number);
       return A[0] - B[0] || A[1] - B[1];
@@ -1446,8 +1605,8 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   $("resetBtn").addEventListener("click", () => { $("resetConfirm").hidden = false; });
   $("resetNo").addEventListener("click", () => { $("resetConfirm").hidden = true; });
   $("resetYes").addEventListener("click", () => {
-    const keepHabit = S.habit, keepHmod = S.hmod;   // 重設跟讀進度不影響下班打卡
-    S = freshState(); S.resetAt = Date.now(); S.habit = keepHabit; S.hmod = keepHmod; S.hmigr = 1; save();
+    const keep = { habit: S.habit, hmod: S.hmod, food: S.food, fdel: S.fdel, fset: S.fset };   // 重設跟讀進度不影響打卡與蛋白質紀錄
+    S = Object.assign(freshState(), keep); S.resetAt = Date.now(); S.hmigr = 1; save();
     T = null; $("testView").hidden = true; $("studyView").hidden = false;
     $("resetConfirm").hidden = true;
     $("summaryOut").hidden = true;
@@ -1816,6 +1975,216 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   });
   window.addEventListener("pagehide", flushTime);
 
+  /* ---------- 蛋白質紀錄 ---------- */
+  // 每份的蛋白質是常見份量的概估值（公克），實際以包裝營養標示為準
+  const FOODS = [
+    { g: "早餐常吃", items: [["egg", "水煮蛋 1 顆", 7], ["sweetpotato", "地瓜 1 條", 2], ["milk", "牛奶 1 杯", 8], ["latte", "拿鐵 中杯", 9], ["boba", "手搖飲（奶茶）", 2]] },
+    { g: "便當", items: [["rice", "白飯 1 碗", 5], ["tuna", "鮪魚罐頭 1 罐", 22], ["veg", "燙青菜 1 份", 2], ["main", "便當主菜（雞腿／排骨）", 25]] },
+    { g: "快速補蛋白質（便利商店就有）", items: [["teaegg", "茶葉蛋 1 顆", 7], ["soymilk", "無糖豆漿 400 ml", 13], ["chicken", "即食雞胸肉 1 包", 25], ["tofu", "豆干 100 g", 17], ["yogurt", "希臘優格 1 杯", 10], ["edamame", "毛豆 1 小碗", 12]] }
+  ];
+  const MEALS = [["b", "早餐"], ["l", "午餐"], ["d", "晚餐"], ["s", "點心"]];
+  const MEAL_NAME = { b: "早餐", l: "午餐", d: "晚餐", s: "點心" };
+  const DEFAULT_W = 53.8, DEFAULT_F = 1.6;
+  function foodW() { return cNum(S.fset.w) || DEFAULT_W; }
+  function foodF() { return cNum(S.fset.f) || DEFAULT_F; }
+  function foodTarget() { return Math.round(foodW() * foodF()); }
+  function foodEntries(date) {
+    const day = ownGet(S.food, date) || {};
+    const order = { b: 0, l: 1, d: 2, s: 3 };
+    return Object.keys(day).map((id) => Object.assign({ id: id }, day[id]))
+      .sort((x, y) => (order[x.m] - order[y.m]) || (x.ts - y.ts));
+  }
+  function foodTotal(date) { return foodEntries(date).reduce((a, e) => a + cNum(e.p), 0); }
+  function foodStats() {
+    const target = foodTarget(), names = {};
+    let days = 0, sum = 0, hit = 0;
+    Object.keys(S.food).forEach((d) => {
+      const t = foodTotal(d);
+      if (!t) return;
+      days++; sum += t; if (t >= target) hit++;
+      foodEntries(d).forEach((e) => { names[e.n] = (names[e.n] || 0) + 1; });
+    });
+    const top = Object.keys(names).sort((x, y) => names[y] - names[x]).slice(0, 5).map((n) => n + " ×" + names[n]);
+    return { target: target, w: foodW(), f: foodF(), days: days, avg: days ? Math.round(sum / days) : 0, hit: hit, top: top };
+  }
+  function defaultMeal() { const d = new Date(), h = d.getHours() + d.getMinutes() / 60; return h < 10.5 ? "b" : h < 15 ? "l" : h < 21 ? "d" : "s"; }
+  function shiftDay(s, n) { const p = s.split("-").map(Number); return ymd(new Date(p[0], p[1] - 1, p[2] + n)); }
+  let foodDay = today(), foodMeal = defaultMeal(), foodFollowToday = true;
+
+  // 還差多少時，從便利商店就買得到的品項挑最接近的一樣（或兩樣）
+  function foodSuggest(left) {
+    const pool = FOODS[2].items.concat([FOODS[0].items[0], FOODS[0].items[2]]);
+    let best = null;
+    pool.forEach((a) => { if (a[2] >= left && (!best || a[2] < best.p)) best = { n: a[1], p: a[2] }; });
+    if (!best) pool.forEach((a, i) => pool.forEach((b, j) => {
+      if (j > i && a[2] + b[2] >= left && (!best || a[2] + b[2] < best.p)) best = { n: a[1] + " ＋ " + b[1], p: a[2] + b[2] };
+    }));
+    return best ? "，可以補：" + best.n + "（＋" + best.p + " g）" : "，分到晚餐和點心慢慢補就好";
+  }
+  function addFood(k, n, p) {
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const day = own(S.food, foodDay) ? S.food[foodDay] : (S.food[foodDay] = {});
+    day[id] = { k: k, n: n, p: p, m: foodMeal, ts: Date.now() };
+    save(); renderFood();
+    toast(MEAL_NAME[foodMeal] + "：" + n + " ＋" + p + " g");
+  }
+  function removeFood(id) {
+    const day = ownGet(S.food, foodDay);
+    if (!day || !own(day, id)) return;
+    delete day[id];
+    if (!Object.keys(day).length) delete S.food[foodDay];
+    S.fdel[foodDay + "|" + id] = Date.now();
+    save(); renderFood();
+  }
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+
+  function renderFood() {
+    const date = foodDay, isToday = date === today();
+    const target = foodTarget(), sum = foodTotal(date), entries = foodEntries(date);
+    const p = date.split("-").map(Number), dt = new Date(p[0], p[1] - 1, p[2]);
+    $("foodDate").textContent = (dt.getMonth() + 1) + "月" + dt.getDate() + "日 週" + "日一二三四五六"[dt.getDay()] + (isToday ? "（今天）" : "") + "，目標 " + target + " g";
+    $("foodNext").disabled = isToday;
+    $("foodToday").hidden = isToday;
+    $("foodSum").textContent = sum;
+    $("foodGoal").textContent = "/ " + target + " g";
+    $("foodFill").style.width = Math.min(100, target ? Math.round(sum / target * 100) : 0) + "%";
+    $("foodMeter").setAttribute("aria-label", "蛋白質 " + sum + " 公克，目標 " + target + " 公克");
+    const left = target - sum;
+    $("foodLeft").textContent = !entries.length ? "還沒有紀錄。先選餐別，再點下面吃了什麼。" :
+      left > 0 ? "還差 " + left + " g" + foodSuggest(left) : "✓ 已達標" + (left < 0 ? "，多了 " + (-left) + " g" : "");
+
+    // 提醒：手搖飲、只有澱粉的一餐
+    const tips = [];
+    if (entries.some((e) => e.k === "boba")) tips.push("手搖飲蛋白質很少、糖分偏高，增肌期早餐可以換成牛奶或無糖豆漿。");
+    MEALS.forEach((m) => {
+      const es = entries.filter((e) => e.m === m[0]);
+      if (es.some((e) => e.k === "rice") && es.reduce((a, e) => a + e.p, 0) < 15) tips.push(m[1] + "主要是澱粉，記得配一份蛋白質（鮪魚、蛋、豆干都可以）。");
+    });
+    const tip = $("foodTip");
+    tip.hidden = !tips.length;
+    tip.textContent = tips.join(" ");
+
+    const seg = $("foodMeal"); seg.innerHTML = "";
+    MEALS.forEach((m) => {
+      const b = el("button", "", m[1]);
+      b.type = "button"; b.setAttribute("role", "radio"); b.setAttribute("aria-checked", foodMeal === m[0] ? "true" : "false");
+      b.addEventListener("click", () => { foodMeal = m[0]; renderFood(); });
+      seg.appendChild(b);
+    });
+
+    const box = $("foodPresets"); box.innerHTML = "";
+    const groups = FOODS.slice();
+    if (S.fset.custom.length) groups.push({ g: "我的常用", items: S.fset.custom.map((c) => ["", c.n, c.p]) });
+    groups.forEach((g) => {
+      const wrap = el("div", "fgroup");
+      wrap.appendChild(el("p", "fgroup-t", g.g));
+      const chips = el("div", "fchips");
+      g.items.forEach((it) => {
+        const b = el("button", "fchip");
+        b.type = "button";
+        b.appendChild(document.createTextNode(it[1]));
+        b.appendChild(el("i", "", "＋" + it[2]));
+        b.setAttribute("aria-label", "記錄 " + it[1] + "，蛋白質 " + it[2] + " 公克");
+        b.addEventListener("click", () => addFood(it[0], it[1], it[2]));
+        chips.appendChild(b);
+      });
+      wrap.appendChild(chips);
+      box.appendChild(wrap);
+    });
+
+    const log = $("foodLog"); log.innerHTML = "";
+    entries.forEach((e) => {
+      const li = el("li");
+      li.appendChild(el("span", "mt", MEAL_NAME[e.m] || "點心"));
+      li.appendChild(el("span", "fn", e.n));
+      li.appendChild(el("span", "fp", e.p + " g"));
+      const rm = el("button", "rm", "✕");
+      rm.type = "button"; rm.setAttribute("aria-label", "刪除 " + e.n);
+      rm.addEventListener("click", () => removeFood(e.id));
+      li.appendChild(rm);
+      log.appendChild(li);
+    });
+
+    // 近 7 天長條：同一個尺度畫長條和目標線；達標實心，未達標淺色
+    const wk = $("foodWeek"); wk.innerHTML = "";
+    const dates = [];
+    for (let i = 6; i >= 0; i--) dates.push(daysAgo(i));
+    const tots = dates.map(foodTotal);
+    const max = Math.max(target * 1.25, ...tots, 1), H = 84;
+    dates.forEach((d, i) => {
+      const t = tots[i], q = d.split("-").map(Number), dd = new Date(q[0], q[1] - 1, q[2]);
+      const label = (dd.getMonth() + 1) + "/" + dd.getDate() + " 週" + "日一二三四五六"[dd.getDay()] + "：" + t + " g（目標 " + target + " g" + (t >= target ? "，已達標" : "") + "）";
+      const b = el("button", "fcol");
+      b.type = "button"; b.title = label; b.setAttribute("aria-label", label);
+      b.setAttribute("aria-pressed", d === foodDay ? "true" : "false");
+      const area = el("span", "fbar-area");
+      const bar = el("span", "fbar" + (t >= target ? "" : " under"));
+      bar.style.height = Math.round(t / max * H) + "px";
+      area.appendChild(bar);
+      b.appendChild(area);
+      b.appendChild(el("span", "fv", t ? String(t) : "–"));
+      b.appendChild(el("span", "fd", "日一二三四五六"[dd.getDay()]));
+      b.addEventListener("click", () => { foodDay = d; foodFollowToday = d === today(); renderFood(); });
+      wk.appendChild(b);
+    });
+    const line = el("div", "ftarget");
+    line.style.top = Math.round(H - target / max * H) + "px";
+    line.appendChild(el("span", "", "目標 " + target + " g"));
+    wk.appendChild(line);
+
+    // 目標設定與常用食物管理
+    const wIn = $("foodW"), fIn = $("foodF");
+    if (document.activeElement !== wIn) wIn.value = foodW();
+    if (document.activeElement !== fIn) fIn.value = String(foodF());
+    $("foodSetNote").textContent = "目前目標：" + foodW() + " kg × " + foodF() + " g ＝ 每天 " + target + " g，每餐約 " + Math.round(target / 3) + " g。" + (S.fset.custom.length ? "下面是你存的常用按鈕，按 ✕ 可以移除：" : "");
+    const cl = $("foodCustomList"); cl.innerHTML = "";
+    S.fset.custom.forEach((c) => {
+      const li = el("li");
+      li.appendChild(el("span", "fn", c.n));
+      li.appendChild(el("span", "fp", c.p + " g"));
+      const rm = el("button", "rm", "✕");
+      rm.type = "button"; rm.setAttribute("aria-label", "移除常用按鈕 " + c.n);
+      rm.addEventListener("click", () => {
+        S.fset.custom = S.fset.custom.filter((x) => x.id !== c.id);
+        S.fset.ts = Date.now(); save(); renderFood();
+      });
+      li.appendChild(rm);
+      cl.appendChild(li);
+    });
+  }
+
+  $("foodPrev").addEventListener("click", () => { foodDay = shiftDay(foodDay, -1); foodFollowToday = false; renderFood(); });
+  $("foodNext").addEventListener("click", () => { if (foodDay < today()) foodDay = shiftDay(foodDay, 1); foodFollowToday = foodDay === today(); renderFood(); });
+  $("foodToday").addEventListener("click", () => { foodDay = today(); foodFollowToday = true; renderFood(); });
+  $("foodForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const n = $("foodName").value.trim().slice(0, 30), p = Math.round(cNum($("foodGram").value));
+    if (!n) { toast("請輸入食物名稱"); return; }
+    if (!(p > 0 && p <= 200)) { toast("蛋白質請輸入 1–200 之間的公克數"); return; }
+    if ($("foodKeep").checked) {
+      if (S.fset.custom.length >= 12) { toast("常用按鈕最多 12 個，請先在「目標設定」移除一些"); return; }
+      S.fset.custom.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), n: n, p: p });
+      S.fset.ts = Date.now();
+    }
+    $("foodName").value = ""; $("foodGram").value = ""; $("foodKeep").checked = false;
+    addFood("", n, p);
+  });
+  $("foodSetForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const w = cNum($("foodW").value), f = cNum($("foodF").value);
+    if (!(w >= 25 && w <= 250)) { toast("體重請輸入 25–250 之間的數字"); return; }
+    S.fset.w = Math.round(w * 10) / 10;
+    S.fset.f = FOOD_F.indexOf(f) >= 0 ? f : DEFAULT_F;
+    S.fset.ts = Date.now();
+    save(); renderFood();
+    toast("已更新目標：每天 " + foodTarget() + " g");
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    if (foodFollowToday) foodDay = today();
+    renderFood();
+  });
+
   /* ---------- 同步後重新整理畫面 ---------- */
   let habitRedraw = null;   // 下班打卡模組載入後設定；同步或匯入換掉 S 時重畫打卡
   function applyState(next) {
@@ -1823,6 +2192,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     S = normalizeState(next);
     writeLocal();
     if (habitRedraw) habitRedraw();
+    renderFood();
     if (JSON.stringify(S) === before) return false;
     if (listening || ptListening) { renderStats(); renderChips(); renderNotebook(); renderPlacementEntry(); }
     else renderAll();
@@ -2302,6 +2672,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 
 
   renderAll();
+  renderFood();
   renderSyncUI();
   setInterval(tick, 1000);
   if (connected()) syncNow({ announce: true });
