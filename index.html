@@ -270,6 +270,83 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+
+/* ---- 下班打卡（habit） ---- */
+:root { --h-ex: #2f6fdb; --h-soak: #b86e00; --h-eng: var(--accent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --h-ex: #6c9cf0; --h-soak: #f0b35a; } }
+:root[data-theme="dark"] { --h-ex: #6c9cf0; --h-soak: #f0b35a; }
+.habit { display: flex; flex-direction: column; gap: 12px; }
+.habit-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.habit-head p { color: var(--muted); font-size: 13px; }
+.habit-streak { text-align: right; white-space: nowrap; }
+.habit-streak b { display: block; font-size: 24px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.habit-streak span { font-size: 12px; color: var(--muted); }
+.habit-nudge { border-left: 4px solid var(--h-soak); background: var(--surface-2); border-radius: 0 12px 12px 0; padding: 8px 12px; font-size: 13px; }
+.habit-tasks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.htask { font: inherit; color: var(--ink); cursor: pointer; text-align: left; background: var(--surface-2); border: 2px solid var(--line); border-radius: 14px; padding: 10px 10px 10px 12px; min-height: 64px; display: flex; flex-direction: column; gap: 2px; }
+.htask b { font-size: 15px; }
+.htask small { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.htask[aria-checked="true"] { background: var(--c); border-color: var(--c); color: #fff; }
+.htask[aria-checked="true"] small { color: #fff; opacity: .92; }
+.htask:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.htask.ex { --c: var(--h-ex); } .htask.soak { --c: var(--h-soak); } .htask.eng { --c: var(--h-eng); }
+.htask[aria-checked="false"] { border-left: 6px solid var(--c); }
+.hweek { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.hday { font: inherit; color: var(--ink); cursor: pointer; background: var(--surface-2); border: 2px solid transparent; border-radius: 12px; padding: 8px 0 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.hday[aria-pressed="true"] { border-color: var(--ink); }
+.hday .wd { font-weight: 700; font-size: 14px; }
+.hday .dn { font-size: 11px; color: var(--muted); margin-top: -4px; }
+.hday .segs { display: flex; flex-direction: column; gap: 3px; width: 58%; }
+.hday .seg { height: 7px; border-radius: 4px; background: var(--line); }
+.hday .seg.ex.on { background: var(--h-ex); } .hday .seg.soak.on { background: var(--h-soak); } .hday .seg.eng.on { background: var(--h-eng); }
+.hday.istoday .wd::after { content: "今"; font-size: 10px; font-weight: 500; color: var(--muted); margin-left: 2px; }
+.habit details { font-size: 14px; }
+.habit summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+.habit ul { margin: 6px 0 0; padding: 0; list-style: none; }
+.habit li { padding: 5px 0; border-top: 1px solid var(--line); }
+.habit li .k { color: var(--muted); display: inline-block; min-width: 5em; }
+.habit .hreset { align-self: flex-start; }
+@media (max-width: 420px) { .habit-tasks { gap: 6px; } .htask { padding: 8px 8px 8px 10px; } }
+
+/* ---- 未完成原因小日誌 ---- */
+.hwhy { display: flex; flex-direction: column; gap: 10px; }
+.hwhy:empty { display: none; }
+.hwhy-title { font-size: 13px; color: var(--muted); }
+.why-row { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; border-left: 6px solid var(--c); }
+.why-row.ex { --c: var(--h-ex); } .why-row.soak { --c: var(--h-soak); } .why-row.eng { --c: var(--h-eng); }
+.why-row b { font-size: 14px; }
+.wchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.wchip { font: inherit; font-size: 13px; color: var(--ink); cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 4px 12px; min-height: 32px; }
+.wchip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.wchip:focus-visible, .why-row input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.why-row input { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; width: 100%; }
+.hstats-top { font-size: 14px; margin: 6px 0 0; }
+.hstats-empty { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+.habit li .tag { display: inline-block; font-size: 12px; background: var(--surface-2); border-radius: 99px; padding: 0 8px; margin-right: 6px; }
+
+/* ---- 今天要完成 ---- */
+.todo-head { display: flex; flex-direction: column; gap: 4px; }
+.todo-head .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.todo-head h4 { margin: 0; font-size: 15px; }
+.todo-prog { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.todo-order { font-size: 13px; color: var(--muted); }
+.habit-extras { display: flex; flex-direction: column; gap: 6px; }
+.habit-extras:empty { display: none; }
+.xtask { font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 46px; width: 100%; }
+.xtask .bx { flex: none; width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--muted); display: grid; place-items: center; font-size: 14px; line-height: 1; color: transparent; }
+.xtask[aria-checked="true"] .bx { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.xtask[aria-checked="true"] .tx { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+.xtask:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---- 回台北日／值班日 ---- */
+.hweek { grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.hday { padding: 8px 0 10px; }
+.hday .wd { font-size: 13px; }
+.hday .segs { width: 64%; }
+.hday.off { opacity: .55; }
+.hday[aria-pressed="true"].off { opacity: 1; }
+.habit-mode { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.habit-mode p { font-size: 13px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -292,6 +369,26 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     </div>
   </header>
   <div class="progress" aria-hidden="true"><div class="bar" id="progressBar"></div></div>
+  <section class="panel habit" id="habitPanel" aria-labelledby="habitTitle">
+    <div class="habit-head">
+      <div>
+        <h3 id="habitTitle">🌙 下班打卡</h3>
+        <p id="habitDate"></p>
+      </div>
+      <div class="habit-streak"><b id="habitStreak">0</b><span>天連續有做</span></div>
+    </div>
+    <p class="habit-nudge" id="habitNudge" hidden></p>
+    <div class="habit-mode"><button class="btn small" id="habitMode" type="button"></button><p id="habitModeNote" hidden></p></div>
+    <div class="todo-head" id="habitTodoHead"></div>
+    <div class="habit-tasks" id="habitTasks"></div>
+    <div class="habit-extras" id="habitExtras"></div>
+    <div class="hwhy" id="habitWhy"></div>
+    <div class="hweek" id="habitWeek" aria-label="本週"></div>
+    <details id="habitDetails"><summary id="habitSummary">今天的提醒與便當</summary><ul id="habitList"></ul></details>
+    <details id="habitStats"><summary>原因小日誌（近 4 週）</summary><div id="habitStatsBody"></div></details>
+    <button class="btn ghost small hreset" id="habitReset" type="button">清除打卡紀錄</button>
+  </section>
+
 
   <section class="card test" id="testView" hidden aria-live="polite"></section>
 
@@ -640,7 +737,9 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   }
   // mod：記錄「完成天數／錯題本」每個勾選最後修改的時間，跨裝置合併時以較新者為準
   // resetAt：重設或完全取代的時間，比它舊的資料在合併時會被捨棄
-  function freshState() { return { day: 1, card: 0, done: {}, scores: {}, hard: {}, mod: {}, time: {}, started: today(), updatedAt: 0, resetAt: 0 }; }
+  function freshState() { return { day: 1, card: 0, done: {}, scores: {}, hard: {}, mod: {}, time: {}, habit: {}, hmod: {}, started: today(), updatedAt: 0, resetAt: 0 }; }
+  // habit：下班打卡 { "YYYY-MM-DD": { ex, soak, eng, mode, todo: {}, why: {} } }
+  // hmod：打卡每個欄位最後修改的時間 { "日期|欄位": ms }，跨裝置合併時逐欄以較新者為準
   // time：{ 裝置ID: { "YYYY-MM-DD": 秒數 } }，按裝置分開記錄，合併時每個裝置每天取較大值，再把各裝置加總
   function load() {
     const def = freshState();
@@ -668,16 +767,82 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   function touch(kind, id) { S.mod[kind + ":" + id] = Date.now(); }
   function normalizeState(o) {
     const s = Object.assign(freshState(), o && typeof o === "object" ? o : {});
-    ["done", "scores", "hard", "mod", "time"].forEach((k) => { if (!s[k] || typeof s[k] !== "object") s[k] = {}; });
+    ["done", "scores", "hard", "mod", "time", "habit", "hmod"].forEach((k) => { if (!s[k] || typeof s[k] !== "object") s[k] = {}; });
     s.day = Math.min(Math.max(parseInt(s.day, 10) || 1, 1), TOTAL);
     s.card = Math.min(Math.max(parseInt(s.card, 10) || 0, 0), DAYS[s.day - 1].w.length - 1);
     return s;
   }
   let S = normalizeState(load());
+  // 舊版「下班打卡」獨立存在 afterwork-habits-v1；第一次載入時搬進主進度，之後跟著進度碼與 Gist 同步
+  if (!S.hmigr) {
+    try {
+      const old = JSON.parse(localStorage.getItem("afterwork-habits-v1") || "null");
+      if (old && typeof old === "object") Object.keys(old).forEach((id) => { if (!S.habit[id]) S.habit[id] = old[id]; });
+    } catch (e) {}
+    S.hmigr = 1;
+    writeLocal();
+  }
 
-  /* 合併兩份進度：a = 本機，b = 另一台裝置／雲端 */
+  /* 打卡欄位：ex / soak / eng / mode，以及 todo.<項目>、why.<習慣> */
+  function hFields(rec) {
+    const f = [];
+    if (!rec || typeof rec !== "object") return f;
+    ["ex", "soak", "eng", "mode"].forEach((k) => { if (rec[k]) f.push(k); });
+    ["todo", "why"].forEach((g) => { if (rec[g] && typeof rec[g] === "object") Object.keys(rec[g]).forEach((k) => f.push(g + "." + k)); });
+    return f;
+  }
+  function hGet(h, id, f) {
+    const r = h[id];
+    if (!r) return undefined;
+    const i = f.indexOf(".");
+    if (i < 0) return r[f];
+    const g = r[f.slice(0, i)];
+    return g ? g[f.slice(i + 1)] : undefined;
+  }
+  function hSet(h, id, f, v) {
+    const i = f.indexOf(".");
+    if (v) {
+      const r = h[id] = h[id] || {};
+      if (i < 0) r[f] = v;
+      else { const g = r[f.slice(0, i)] = r[f.slice(0, i)] || {}; g[f.slice(i + 1)] = v; }
+      return;
+    }
+    const r = h[id];
+    if (!r) return;
+    if (i < 0) delete r[f];
+    else {
+      const gk = f.slice(0, i), g = r[gk];
+      if (g) { delete g[f.slice(i + 1)]; if (!Object.keys(g).length) delete r[gk]; }
+    }
+    if (!Object.keys(r).length) delete h[id];
+  }
+  function mergeHabit(a, b) {
+    const out = JSON.parse(JSON.stringify(a.habit)), mod = Object.assign({}, a.hmod);
+    const keys = new Set(Object.keys(a.hmod).concat(Object.keys(b.hmod)));
+    [a.habit, b.habit].forEach((h) => Object.keys(h).forEach((id) => hFields(h[id]).forEach((f) => keys.add(id + "|" + f))));
+    keys.forEach((mk) => {
+      const p = mk.indexOf("|");
+      if (p < 0) return;
+      const id = mk.slice(0, p), f = mk.slice(p + 1);
+      const ta = a.hmod[mk] || 0, tb = b.hmod[mk] || 0;
+      const va = hGet(a.habit, id, f), vb = hGet(b.habit, id, f);
+      const v = ta === tb ? (va || vb) : (tb > ta ? vb : va);   // 同時間（或沒有時間）→ 聯集；否則以後改的為準
+      hSet(out, id, f, v ? JSON.parse(JSON.stringify(v)) : undefined);
+      if (ta || tb) mod[mk] = Math.max(ta, tb);
+    });
+    return { habit: out, hmod: mod };
+  }
+
+  /* 合併兩份進度：a = 本機，b = 另一台裝置／雲端。下班打卡不受「重設跟讀進度」影響，永遠逐欄合併 */
   function mergeState(a, b) {
     a = normalizeState(a); b = normalizeState(b);
+    const hm = mergeHabit(a, b);
+    const out = mergeCore(a, b);
+    out.habit = hm.habit; out.hmod = hm.hmod;
+    out.hmigr = 1;
+    return out;
+  }
+  function mergeCore(a, b) {
     if ((b.resetAt || 0) > (a.resetAt || 0)) return b;   // 對方較晚重設過 → 以對方為準
     if ((a.resetAt || 0) > (b.resetAt || 0)) return a;
     const out = JSON.parse(JSON.stringify(a));
@@ -1179,7 +1344,8 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   $("resetBtn").addEventListener("click", () => { $("resetConfirm").hidden = false; });
   $("resetNo").addEventListener("click", () => { $("resetConfirm").hidden = true; });
   $("resetYes").addEventListener("click", () => {
-    S = freshState(); S.resetAt = Date.now(); save();
+    const keepHabit = S.habit, keepHmod = S.hmod;   // 重設跟讀進度不影響下班打卡
+    S = freshState(); S.resetAt = Date.now(); S.habit = keepHabit; S.hmod = keepHmod; S.hmigr = 1; save();
     T = null; $("testView").hidden = true; $("studyView").hidden = false;
     $("resetConfirm").hidden = true;
     $("summaryOut").hidden = true;
@@ -1549,10 +1715,12 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   window.addEventListener("pagehide", flushTime);
 
   /* ---------- 同步後重新整理畫面 ---------- */
+  let habitRedraw = null;   // 下班打卡模組載入後設定；同步或匯入換掉 S 時重畫打卡
   function applyState(next) {
     const before = JSON.stringify(S);
     S = normalizeState(next);
     writeLocal();
+    if (habitRedraw) habitRedraw();
     if (JSON.stringify(S) === before) return false;
     if (listening || ptListening) { renderStats(); renderChips(); renderNotebook(); renderPlacementEntry(); }
     else renderAll();
@@ -1604,7 +1772,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     try { incoming = decodeCode($("codeBox").value); }
     catch (e) { toast(e.message || "無法讀取進度碼"); return; }
     let next;
-    if (replace) { next = normalizeState(incoming); next.resetAt = Date.now(); next.updatedAt = Date.now(); }
+    if (replace) { next = normalizeState(incoming); next.resetAt = Date.now(); next.updatedAt = Date.now(); next.hmigr = 1; }
     else {
       // 手動合併是使用者明確要這份資料，所以不因「本機較晚重設過」而捨棄它
       incoming.resetAt = Math.max(incoming.resetAt || 0, S.resetAt || 0);
@@ -1757,11 +1925,286 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   $("envNote").textContent = notes.length ? "⚠ " + notes.join("；") :
     "進度自動儲存在此瀏覽器。發音可離線使用；麥克風跟讀需連網（Chrome／Edge 使用雲端辨識）。";
 
+
+  /* ---------- 下班打卡（存在主進度 S.habit，跟著進度碼與 Gist 同步；重設跟讀進度不影響它） ---------- */
+  (function habit() {
+    const TASKS = [{ k: "ex", n: "運動" }, { k: "soak", n: "泡腳" }, { k: "eng", n: "英文跟讀" }];
+    const WD = "日一二三四五六";
+    const PLAN = {
+      1: { l: "運動日，也是煮便當日", ex: "動 2 分鐘就算，做完再煮飯", soak: "飯後或睡前，太晚縮成 10 分鐘", eng: "煮菜時戴耳機複習，泡腳時正式跟讀",
+        b: [["今晚", "煮好當天分裝，放涼到不燙手再蓋緊"], ["週二至週四", "放冷藏內層"], ["週五", "直接冷凍"]] },
+      2: { l: "看中醫日", ex: "休息，伸展 10 分鐘即可", soak: "有無皆可，先問醫師適不適合", eng: "10 分鐘就好",
+        b: [["今天的便當", "冷藏的葉菜、蛋類，最不耐放，先吃"]] },
+      3: { l: "運動日", ex: "動 2 分鐘就算，想繼續就繼續", soak: "洗完澡泡 20 分鐘", eng: "泡腳時戴耳機跟讀",
+        b: [["今天的便當", "冷藏的滷豆腐、菇類、根莖類"], ["今晚", "若週四的便當已冷凍，移到冷藏解凍"]] },
+      4: { l: "休息日", ex: "休息，想動就散步", soak: "泡腳 20 分鐘", eng: "泡腳時戴耳機跟讀",
+        b: [["今天的便當", "冷藏第 3 天，今天吃完"], ["今晚", "把週五的冷凍便當移到冷藏解凍"]] },
+      5: { l: "運動日，輕鬆做", ex: "動 2 分鐘就算，輕鬆走走也可以", soak: "泡腳 20 分鐘", eng: "可多練 10 分鐘複習本週",
+        b: [["今天的便當", "前一晚解凍的滷肉、肉燥、咖哩或雞胸肉"], ["週末", "完全放空，或當作補課日"]] }
+    };
+    let H = S.habit;
+    // 每次修改都記下「日期|欄位」的時間，跨裝置合併時以較新者為準
+    const saveH = (id, field) => {
+      if (id && field) S.hmod[id + "|" + field] = Date.now();
+      S.habit = H;
+      save();
+    };
+    const pad = (n) => (n < 10 ? "0" + n : "" + n);
+    const kOf = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    const add = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+    const isWk = (d) => d.getDay() >= 1 && d.getDay() <= 5;
+    const prevWk = (d) => { let x = add(d, -1); while (!isWk(x)) x = add(x, -1); return x; };
+    const monOf = (d) => add(d, d.getDay() === 0 ? -6 : 1 - d.getDay());
+    // 在跟讀卡按「完成」的那天，英文跟讀自動算完成
+    const engAuto = (key) => Object.keys(S.done || {}).some((k) => S.done[k] === key);
+    const val = (d, t) => { const r = H[kOf(d)] || {}; return !!r[t] || (t === "eng" && engAuto(kOf(d))); };
+    const any = (d) => TASKS.some((t) => val(d, t.k));
+    const t0 = new Date(); const TODAY = new Date(t0.getFullYear(), t0.getMonth(), t0.getDate());
+    let sel = TODAY;
+
+
+
+    // 今天要完成：三個核心習慣 + 當天的家事與便當待辦
+    const EXTRA = {
+      1: { o: "到家 → 運動 2 分鐘 → 煮便當並分裝 → 吃飯 → 掃地拖地 → 洗澡 → 泡腳 + 英文跟讀",
+           x: [["bento", "煮便當並分裝（週二至四冷藏、週五冷凍）"], ["sweep", "掃地"], ["mop", "拖地"]],
+           tip: "週一事情最多，運動只做最小版本就好。太累的話，今天只掃不拖也算完成。" },
+      2: { o: "看中醫 → 回家吃飯 → 英文跟讀 10 分鐘", x: [["tcm", "看中醫"]], tip: "泡腳先問醫師當天適不適合。" },
+      3: { o: "到家 → 運動 2 分鐘 → 洗澡 → 吃飯 → 泡腳 + 英文跟讀", x: [] },
+      4: { o: "到家 → 吃飯 → 把週五的冷凍便當移到冷藏 → 泡腳 + 英文跟讀", x: [["thaw", "把週五的冷凍便當移到冷藏解凍"]] },
+      5: { o: "到家 → 運動 2 分鐘 → 洗澡 → 吃飯 → 泡腳 + 英文跟讀", x: [["review", "多練 10 分鐘，複習本週英文"]] }
+    };
+    function renderTodo() {
+      const head = $("habitTodoHead"), ex = $("habitExtras");
+      head.innerHTML = ""; ex.innerHTML = "";
+      const cfg = EXTRA[sel.getDay()];
+      if (!cfg || !(isWk(sel) || mode(sel) === "on" || any(sel))) return;
+      const id = kOf(sel);
+      const todo = (H[id] && H[id].todo) || {};
+      const coreDone = TASKS.filter((t) => val(sel, t.k)).length;
+      const xDone = cfg.x.filter((e) => todo[e[0]]).length;
+      const total = TASKS.length + cfg.x.length, done = coreDone + xDone;
+      const isToday = id === kOf(TODAY);
+      head.innerHTML = '<div class="row"><h4>' + (mode(sel) === "off" ? "選做（不計入連續天數）" : isToday ? "今天要完成" : "這天要完成") + '</h4><span class="todo-prog">' + done + " / " + total + (done === total ? " 全部完成" : "") + "</span></div>" +
+        (mode(sel) === "on" ? '<p class="todo-order">順序：' + cfg.o + "</p>" + (cfg.tip ? '<p class="todo-order">' + cfg.tip + "</p>" : "") : "");
+      cfg.x.forEach((e) => {
+        const on = !!todo[e[0]];
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "xtask";
+        b.setAttribute("role", "checkbox"); b.setAttribute("aria-checked", on ? "true" : "false");
+        b.innerHTML = '<span class="bx" aria-hidden="true">✓</span><span class="tx">' + e[1] + "</span>";
+        b.addEventListener("click", () => {
+          H[id] = H[id] || {}; H[id].todo = H[id].todo || {};
+          if (H[id].todo[e[0]]) delete H[id].todo[e[0]]; else H[id].todo[e[0]] = true;
+          if (!Object.keys(H[id].todo).length) delete H[id].todo;
+          saveH(id, "todo." + e[0]); draw();
+          const again = $("habitExtras").querySelectorAll(".xtask")[cfg.x.indexOf(e)]; if (again) again.focus();
+        });
+        ex.appendChild(b);
+      });
+    }
+
+    const REASONS = ["太累", "加班", "煮飯太晚", "身體不適", "下雨", "臨時有事", "忘記了"];
+    const whyOf = (id, k) => (H[id] && H[id].why && H[id].why[k]) || {};
+    function setWhy(id, k, patch) {
+      H[id] = H[id] || {}; H[id].why = H[id].why || {};
+      const w = Object.assign({}, H[id].why[k], patch);
+      if (!w.r) delete w.r;
+      if (!w.n) delete w.n;
+      if (!w.r && !w.n) delete H[id].why[k]; else H[id].why[k] = w;
+      if (!Object.keys(H[id].why).length) delete H[id].why;
+      if (!Object.keys(H[id]).length) delete H[id];
+      saveH(id, "why." + k);
+    }
+    function renderWhy() {
+      const box = $("habitWhy");
+      box.innerHTML = "";
+      if (mode(sel) !== "on" || sel > TODAY) return;
+      const miss = TASKS.filter((t) => !val(sel, t.k));
+      if (!miss.length) return;
+      const id = kOf(sel);
+      const title = document.createElement("p");
+      title.className = "hwhy-title";
+      title.textContent = kOf(sel) === kOf(TODAY) ? "還沒打勾的格子，沒做成的話記一下原因：" : "這天沒打勾的格子，補記原因：";
+      box.appendChild(title);
+      miss.forEach((t) => {
+        const cur = whyOf(id, t.k);
+        const row = document.createElement("div");
+        row.className = "why-row " + t.k;
+        const nm = document.createElement("b"); nm.textContent = t.n; row.appendChild(nm);
+        const chips = document.createElement("div"); chips.className = "wchips"; chips.setAttribute("role", "group"); chips.setAttribute("aria-label", t.n + "沒做的原因");
+        REASONS.forEach((r) => {
+          const c = document.createElement("button");
+          c.type = "button"; c.className = "wchip"; c.textContent = r;
+          c.setAttribute("aria-pressed", cur.r === r ? "true" : "false");
+          c.addEventListener("click", () => { setWhy(id, t.k, { r: cur.r === r ? "" : r }); draw(); });
+          chips.appendChild(c);
+        });
+        row.appendChild(chips);
+        const inp = document.createElement("input");
+        inp.type = "text"; inp.maxLength = 80; inp.value = cur.n || ""; inp.autocomplete = "off";
+        inp.placeholder = "補一句（選填）";
+        inp.setAttribute("aria-label", t.n + "沒做的補充說明");
+        inp.addEventListener("input", () => setWhy(id, t.k, { n: inp.value.trim() }));
+        inp.addEventListener("change", renderStats);
+        row.appendChild(inp);
+        box.appendChild(row);
+      });
+    }
+    function renderStats() {
+      const body = $("habitStatsBody");
+      const rows = [], counts = {};
+      const limit = add(TODAY, -27);
+      Object.keys(H).forEach((id) => {
+        const w = H[id] && H[id].why; if (!w) return;
+        const p = id.split("-").map(Number);
+        const d = new Date(p[0], p[1] - 1, p[2]);
+        if (isNaN(d) || d < limit || d > TODAY) return;
+        TASKS.forEach((t) => {
+          const e = w[t.k];
+          if (!e || val(d, t.k)) return;
+          if (e.r) counts[e.r] = (counts[e.r] || 0) + 1;
+          rows.push({ d: d, id: id, t: t.n, r: e.r || "", n: e.n || "" });
+        });
+      });
+      if (!rows.length) { body.innerHTML = '<p class="hstats-empty">還沒有紀錄。沒做成的格子，可以在上方記一下原因。</p>'; return; }
+      rows.sort((x, y) => (x.id < y.id ? 1 : x.id > y.id ? -1 : 0));
+      const top = Object.keys(counts).sort((x, y) => counts[y] - counts[x]).map((r) => esc(r) + " ×" + counts[r]).join("　");
+      body.innerHTML = (top ? '<p class="hstats-top"><b>最常見：</b>' + top + "</p>" : "") +
+        "<ul>" + rows.slice(0, 10).map((r) =>
+          "<li><span class=\"k\">" + (r.d.getMonth() + 1) + "/" + r.d.getDate() + " 週" + WD[r.d.getDay()] + "</span>" +
+          '<span class="tag">' + esc(r.t) + "</span>" + esc(r.r) + (r.n ? "：" + esc(r.n) : "") + "</li>").join("") + "</ul>";
+    }
+
+
+    // 每天的狀態：on = 照課表做、off = 不計入（回台北、放假）。週一至週四預設 on；週五預設 off（多半回台北）；週末預設 off，值班時可改成 on。
+    PLAN[0] = PLAN[6] = { l: "值班日", ex: "休息，或下班後散步", soak: "泡腳 20 分鐘", eng: "泡腳時戴耳機跟讀", b: [["提醒", "值班日也照課表，運動做最小版本就好"]] };
+    EXTRA[0] = EXTRA[6] = { o: "值班 → 回家吃飯 → 泡腳 + 英文跟讀", x: [] };
+    const rawOn = (d) => { const r = H[kOf(d)]; return !!(r && r.mode === "on"); };
+    // 週末有值班的那一週，週五人在新竹，預設照課表做
+    const dutyWeekend = (fri) => rawOn(add(fri, 1)) || rawOn(add(fri, 2));
+    const defMode = (d) => { const w = d.getDay(); if (w >= 1 && w <= 4) return "on"; if (w === 5) return dutyWeekend(d) ? "on" : "off"; return "off"; };
+    const mode = (d) => { const r = H[kOf(d)]; return (r && r.mode) || defMode(d); };
+    function prevActive(d) {
+      let x = d;
+      for (let i = 0; i < 14; i++) { x = add(x, -1); if (mode(x) === "on") return x; }
+      return null;
+    }
+    // 連續天數：有做就算一天；不計入的日子（回台北、放假、週末）沒做不會中斷
+    function streak() {
+      let n = 0;
+      for (let i = 0, d = TODAY; i < 500; i++, d = add(d, -1)) {
+        if (any(d)) n++;
+        else if (mode(d) === "on" && kOf(d) !== kOf(TODAY)) break;
+      }
+      return n;
+    }
+
+    function draw() {
+      H = S.habit;   // 同步或匯入後 S 可能換成新物件
+      const w = sel.getDay(), plan = PLAN[w], isToday = kOf(sel) === kOf(TODAY);
+      const md = mode(sel), showPlan = isWk(sel) || md === "on" || any(sel);
+      $("habitStreak").textContent = streak();
+      $("habitDate").textContent = (sel.getMonth() + 1) + "月" + sel.getDate() + "日 週" + WD[w] + (isToday ? "（今天）" : "") +
+        (showPlan ? "，" + plan.l : "，週末休息") + (isWk(sel) && md === "off" ? "，不在新竹／不計入" : "");
+
+      const hasAny = Object.keys(H).some((k) => H[k] && (H[k].ex || H[k].soak || H[k].eng));
+      const nudge = $("habitNudge");
+      const pa = prevActive(TODAY);
+      if (hasAny && isToday && mode(TODAY) === "on" && !any(TODAY) && pa && !any(pa)) {
+        nudge.hidden = false;
+        nudge.textContent = "上一個課表日沒做也沒關係，今天回來做最小版本就好，不要連續漏兩天。";
+      } else nudge.hidden = true;
+
+      const mb = $("habitMode"), mn = $("habitModeNote");
+      mb.textContent = md === "on"
+        ? (isWk(sel) ? "這天不在新竹／放假，不計入" : "取消值班日")
+        : (isWk(sel) ? "這天人在新竹，照課表做" : "這天值班，照課表做");
+      mb.onclick = () => {
+        const id = kOf(sel), nxt = md === "on" ? "off" : "on";
+        H[id] = H[id] || {};
+        if (nxt === defMode(sel)) delete H[id].mode; else H[id].mode = nxt;
+        if (!Object.keys(H[id]).length) delete H[id];
+        saveH(id, "mode"); draw();
+      };
+      if (isWk(sel) && md === "off") { mn.hidden = false; mn.textContent = "這天不計入連續天數，也不會提醒補記原因。想做的話仍可打勾。"; }
+      else if (w === 5 && md === "on" && dutyWeekend(sel) && !(H[kOf(sel)] && H[kOf(sel)].mode)) { mn.hidden = false; mn.textContent = "這個週末有值班，所以這個週五人在新竹，照課表做。"; }
+      else mn.hidden = true;
+
+      const tasks = $("habitTasks");
+      tasks.innerHTML = "";
+      if (showPlan) {
+        TASKS.forEach((t) => {
+          const on = val(sel, t.k);
+          const b = document.createElement("button");
+          b.type = "button"; b.className = "htask " + t.k;
+          b.setAttribute("role", "checkbox"); b.setAttribute("aria-checked", on ? "true" : "false");
+          b.innerHTML = "<b>" + (on ? "✓ " : "") + t.n + "</b><small>" + plan[t.k] + "</small>";
+          b.addEventListener("click", () => {
+            const id = kOf(sel);
+            if (t.k === "eng" && engAuto(id) && !(H[id] && H[id].eng)) { toast("跟讀卡已標記完成，英文會自動算做完成"); return; }
+            H[id] = H[id] || {};
+            if (H[id][t.k]) delete H[id][t.k]; else H[id][t.k] = true;
+            if (!Object.keys(H[id]).length) delete H[id];
+            saveH(id, t.k); draw();
+            const again = tasks.querySelector(".htask." + t.k); if (again) again.focus();
+          });
+          tasks.appendChild(b);
+        });
+      } else {
+        tasks.innerHTML = '<p style="color:var(--muted);font-size:13px">週末完全放空，或當作補課日。有值班的話，按上面的按鈕改成照課表做。</p>';
+      }
+
+      const wk = $("habitWeek"); wk.innerHTML = "";
+      const mon = monOf(sel);
+      for (let i = 0; i < 7; i++) {
+        const d = add(mon, i);
+        const off = mode(d) === "off" && !any(d);
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "hday" + (kOf(d) === kOf(TODAY) ? " istoday" : "") + (off ? " off" : "");
+        b.setAttribute("aria-pressed", kOf(d) === kOf(sel) ? "true" : "false");
+        const n = TASKS.filter((t) => val(d, t.k)).length;
+        b.setAttribute("aria-label", "週" + WD[d.getDay()] + " " + (d.getMonth() + 1) + "月" + d.getDate() + "日，" + (off ? "不計入，" : "") + "已完成 " + n + " 項");
+        b.innerHTML = '<span class="wd">' + WD[d.getDay()] + '</span><span class="dn">' + d.getDate() + '</span><span class="segs">' +
+          TASKS.map((t) => '<span class="seg ' + t.k + (val(d, t.k) ? " on" : "") + '"></span>').join("") + "</span>";
+        b.addEventListener("click", () => { sel = d; draw(); });
+        wk.appendChild(b);
+      }
+
+      renderTodo();
+      renderWhy();
+      renderStats();
+      const det = $("habitDetails");
+      if (showPlan) {
+        det.hidden = false;
+        $("habitList").innerHTML = plan.b.map((r) => '<li><span class="k">' + r[0] + "</span>" + r[1] + "</li>").join("");
+      } else det.hidden = true;
+    }
+
+    let armed = 0, armT = 0;
+    $("habitReset").addEventListener("click", () => {
+      const btn = $("habitReset");
+      if (armed) {
+        // 每個欄位都記下清除時間，另一台裝置同步時也會跟著清掉
+        const now = Date.now();
+        Object.keys(H).forEach((id) => hFields(H[id]).forEach((f) => { S.hmod[id + "|" + f] = now; }));
+        H = {}; saveH(); armed = 0; clearTimeout(armT); btn.textContent = "清除打卡紀錄"; draw(); toast("已清除打卡紀錄"); }
+      else { armed = 1; btn.textContent = "再按一次確認（不影響跟讀進度）"; armT = setTimeout(() => { armed = 0; btn.textContent = "清除打卡紀錄"; }, 3000); }
+    });
+    // 跟讀卡標記完成或重設後，更新英文打卡
+    ["doneBtn", "resetYes"].forEach((id) => { const el = $(id); if (el) el.addEventListener("click", () => setTimeout(draw, 0)); });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") draw(); });
+    habitRedraw = draw;
+    draw();
+  })();
+
+
   renderAll();
   renderSyncUI();
   setInterval(tick, 1000);
   if (connected()) syncNow({ announce: true });
 })();
 </script>
+
 </body>
 </html>
