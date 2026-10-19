@@ -774,9 +774,83 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     Object.keys(v).forEach((k) => { if (badKey(k)) delete v[k]; else scrub(v[k], depth + 1); });
     return v;
   }
+  /* 只接受已知格式的鍵，而且只讀寫物件「自己的」屬性，不碰繼承來的 toString 等內建屬性 */
+  const own = (o, k) => !!o && typeof o === "object" && Object.prototype.hasOwnProperty.call(o, k);
+  const ownGet = (o, k) => (own(o, k) ? o[k] : undefined);
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;                                     // 打卡日期、學習時間日期
+  const HFIELD_RE = /^(ex|soak|eng|mode|todo\.[a-z]{1,20}|why\.(ex|soak|eng))$/;  // 打卡欄位
+  const DAY_RE = /^\d{1,2}$/;                                                // 完成天數：第幾天
+  const CARD_RE = /^\d{1,2}-\d{1,2}$/;                                       // 卡片：天-張
+  const DEV_RE = /^[a-z0-9]{1,16}$/;                                         // 裝置 ID
+  const MOD_RE = /^(done:\d{1,2}|hard:\d{1,2}-\d{1,2})$/;                    // 完成天數／錯題本的修改時間
+  const validHabitKey = (id, f) => DATE_RE.test(id) && HFIELD_RE.test(f) && !f.split(".").some(badKey);
+
+  /* 逐欄清理外部來的進度：鍵不符格式就丟掉，數字轉成數字，文字限制長度。
+     所有路徑（載入、進度碼合併或取代、Gist 同步）都會經過這裡，畫面只會拿到乾淨的資料 */
+  const cNum = (v) => { const x = Number(v); return isFinite(x) ? x : 0; };
+  const cStr = (v, n) => (typeof v === "string" ? v.slice(0, n) : "");
+  function cMap(obj, re, fn) {
+    const o = {};
+    if (!obj || typeof obj !== "object") return o;
+    Object.keys(obj).forEach((k) => {
+      if (!re.test(k) || badKey(k)) return;
+      const v = fn(obj[k]);
+      if (v !== undefined) o[k] = v;
+    });
+    return o;
+  }
+  function cleanHabitRec(r) {
+    if (!r || typeof r !== "object") return undefined;
+    const o = {};
+    ["ex", "soak", "eng"].forEach((k) => { if (ownGet(r, k)) o[k] = true; });
+    const m = ownGet(r, "mode");
+    if (m === "on" || m === "off") o.mode = m;
+    const todo = cMap(ownGet(r, "todo"), /^[a-z]{1,20}$/, (v) => (v ? true : undefined));
+    if (Object.keys(todo).length) o.todo = todo;
+    const why = cMap(ownGet(r, "why"), /^(ex|soak|eng)$/, (v) => {
+      if (!v || typeof v !== "object") return undefined;
+      const w = {}, rr = cStr(v.r, 40), nn = cStr(v.n, 80);
+      if (rr) w.r = rr;
+      if (nn) w.n = nn;
+      return rr || nn ? w : undefined;
+    });
+    if (Object.keys(why).length) o.why = why;
+    return Object.keys(o).length ? o : undefined;
+  }
+  function cleanPlacement(p) {
+    if (!p || typeof p !== "object") return undefined;
+    const lv = {}, sec = {};
+    ["A2", "B1", "B2", "C1"].forEach((k) => { const x = ownGet(p.byLevel, k) || {}; lv[k] = { c: cNum(x.c), n: cNum(x.n) }; });
+    ["vocab", "grammar", "read", "listen"].forEach((k) => { const x = ownGet(p.bySec, k) || {}; sec[k] = { c: cNum(x.c), n: cNum(x.n) }; });
+    return {
+      date: cStr(p.date, 10), ts: cNum(p.ts), level: cStr(p.level, 12), correct: cNum(p.correct), total: cNum(p.total),
+      byLevel: lv, bySec: sec,
+      wrong: (Array.isArray(p.wrong) ? p.wrong : []).slice(0, 40).filter((w) => w && typeof w === "object").map((w) => ({
+        id: cStr(w.id, 8), sec: cStr(w.sec, 10), lv: cStr(w.lv, 4), q: cStr(w.q, 300), pick: cStr(w.pick, 200), right: cStr(w.right, 200) })),
+      speak: (Array.isArray(p.speak) ? p.speak : []).slice(0, 4).map((x) => (x && typeof x === "object" ? { lv: cStr(x.lv, 4), s: cNum(x.s), t: cStr(x.t, 300) } : null))
+    };
+  }
+  function cleanState(s) {
+    s.done = cMap(s.done, DAY_RE, (v) => (v ? (typeof v === "string" ? v.slice(0, 10) : today()) : undefined));
+    s.scores = cMap(s.scores, CARD_RE, (v) => (v && typeof v === "object" ? {
+      att: cNum(v.att), sum: cNum(v.sum), best: cNum(v.best), last: cNum(v.last),
+      hist: (Array.isArray(v.hist) ? v.hist : []).slice(0, 5).filter((h) => h && typeof h === "object").map((h) => ({ s: cNum(h.s), t: cStr(h.t, 300), at: cStr(h.at, 10) }))
+    } : undefined));
+    s.hard = cMap(s.hard, CARD_RE, (v) => (v ? { at: cStr(v && v.at, 10), auto: !!(v && v.auto) } : undefined));
+    s.mod = cMap(s.mod, MOD_RE, cNum);
+    s.time = cMap(s.time, DEV_RE, (v) => cMap(v, DATE_RE, cNum));
+    s.habit = cMap(s.habit, DATE_RE, cleanHabitRec);
+    s.hmod = cMap(s.hmod, /^[^|]{1,10}\|[a-z.]{1,30}$/, cNum);
+    Object.keys(s.hmod).forEach((k) => { const p = k.indexOf("|"); if (!validHabitKey(k.slice(0, p), k.slice(p + 1))) delete s.hmod[k]; });
+    const pl = cleanPlacement(s.placement);
+    if (pl) s.placement = pl; else delete s.placement;
+    s.started = DATE_RE.test(s.started) ? s.started : today();
+    s.updatedAt = cNum(s.updatedAt); s.resetAt = cNum(s.resetAt);
+    return s;
+  }
   function normalizeState(o) {
     const s = Object.assign(freshState(), o && typeof o === "object" ? scrub(o, 0) : {});
-    ["done", "scores", "hard", "mod", "time", "habit", "hmod"].forEach((k) => { if (!s[k] || typeof s[k] !== "object") s[k] = {}; });
+    cleanState(s);
     s.day = Math.min(Math.max(parseInt(s.day, 10) || 1, 1), TOTAL);
     s.card = Math.min(Math.max(parseInt(s.card, 10) || 0, 0), DAYS[s.day - 1].w.length - 1);
     return s;
@@ -786,21 +860,12 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   if (!S.hmigr) {
     try {
       const old = JSON.parse(localStorage.getItem("afterwork-habits-v1") || "null");
-      if (old && typeof old === "object") Object.keys(old).forEach((id) => { if (!S.habit[id]) S.habit[id] = old[id]; });
+      if (old && typeof old === "object") Object.keys(old).forEach((id) => { if (DATE_RE.test(id) && !own(S.habit, id)) S.habit[id] = old[id]; });
     } catch (e) {}
     S.hmigr = 1;
+    S = normalizeState(S);   // 搬進來的舊資料也要清理
     writeLocal();
   }
-
-  /* 合併時只接受已知格式的鍵，而且只讀寫物件「自己的」屬性，不碰繼承來的 toString 等內建屬性 */
-  const own = (o, k) => !!o && typeof o === "object" && Object.prototype.hasOwnProperty.call(o, k);
-  const ownGet = (o, k) => (own(o, k) ? o[k] : undefined);
-  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;                                     // 打卡日期、學習時間日期
-  const HFIELD_RE = /^(ex|soak|eng|mode|todo\.[a-z]{1,20}|why\.(ex|soak|eng))$/;  // 打卡欄位
-  const DAY_RE = /^\d{1,2}$/;                                                // 完成天數：第幾天
-  const CARD_RE = /^\d{1,2}-\d{1,2}$/;                                       // 卡片：天-張
-  const DEV_RE = /^[a-z0-9]{1,16}$/;                                         // 裝置 ID
-  const validHabitKey = (id, f) => DATE_RE.test(id) && HFIELD_RE.test(f) && !f.split(".").some(badKey);
 
   /* 打卡欄位：ex / soak / eng / mode，以及 todo.<項目>、why.<習慣> */
   function hFields(rec) {
@@ -1200,9 +1265,9 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       if (!p.w) return "";
       const r = S.scores[k];
       const info = "Day " + p.d + " · " + p.w[3] + (r ? " · 最高 " + r.best + " 分" : "");
-      return '<li><button class="go" data-key="' + k + '"><b>' + esc(p.w[0]) +
+      return '<li><button class="go" data-key="' + esc(k) + '"><b>' + esc(p.w[0]) +
         (S.hard[k].auto ? ' <span class="tag-auto">低分</span>' : "") + "</b><small>" + esc(info) + "</small></button>" +
-        '<button class="rm" data-rm="' + k + '" aria-label="從錯題本移除 ' + esc(p.w[0]) + '">✕</button></li>';
+        '<button class="rm" data-rm="' + esc(k) + '" aria-label="從錯題本移除 ' + esc(p.w[0]) + '">✕</button></li>';
     }).join("");
   }
   function renderCard() {
@@ -1567,7 +1632,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   function meter(label, c, n) {
     const r = n ? c / n : 0;
     return '<div class="meter"><b>' + esc(label) + '</b><div class="track"><div class="fill ' + (r < 0.5 ? "low" : r < 0.67 ? "mid" : "") +
-      '" style="width:' + Math.round(r * 100) + '%"></div></div><span>' + c + "/" + n + "</span></div>";
+      '" style="width:' + Math.round(r * 100) + '%"></div></div><span>' + esc(c) + "/" + esc(n) + "</span></div>";
   }
   function renderResult() {
     const p = S.placement;
@@ -1577,15 +1642,15 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     const sp = (p.speak || []).filter(Boolean);
     v.innerHTML =
       '<div class="card-top"><span class="daytag">程度測驗結果 · ' + esc(p.date) + '</span><button class="btn small ghost" data-pt="quit">回到單字卡</button></div>' +
-      '<div><p class="label">估計 CEFR 等級</p><div class="lvl-big">' + esc(p.level) + '</div><p class="tq-zh">選擇題答對 ' + p.correct + " / " + p.total + " 題</p></div>" +
+      '<div><p class="label">估計 CEFR 等級</p><div class="lvl-big">' + esc(p.level) + '</div><p class="tq-zh">選擇題答對 ' + esc(p.correct) + " / " + esc(p.total) + " 題</p></div>" +
       '<div class="advice">' + esc(adv.msg) + (adv.weakest ? " 你目前最弱的是「" + esc(adv.weakest) + "」，新題庫會加強這部分。" : "") + "</div>" +
       '<div class="res-grid"><div><p class="label">各等級答對</p><div class="meter-list">' +
         LEVELS.map((l) => meter(l, p.byLevel[l].c, p.byLevel[l].n)).join("") + '</div></div>' +
       '<div><p class="label">各技能答對</p><div class="meter-list">' +
         Object.keys(SEC_NAME).map((s) => meter(SEC_NAME[s], p.bySec[s].c, p.bySec[s].n)).join("") + "</div></div></div>" +
-      '<div><p class="label">口說跟讀</p><p>' + (sp.length ? sp.map((x) => x.lv + " 句 " + x.s + " 分").join("　") : "未測（沒關係，平常在單字卡跟讀也會記錄）") + "</p></div>" +
+      '<div><p class="label">口說跟讀</p><p>' + (sp.length ? sp.map((x) => esc(x.lv) + " 句 " + esc(x.s) + " 分").join("　") : "未測（沒關係，平常在單字卡跟讀也會記錄）") + "</p></div>" +
       (p.wrong.length ? '<details><summary class="label" style="cursor:pointer">答錯的題目（' + p.wrong.length + '）</summary><ol class="wrong-list">' +
-        p.wrong.map((w) => "<li>" + esc(w.q) + "<br><small>" + SEC_NAME[w.sec] + " " + w.lv + "｜你選：" + esc(w.pick) + "｜正解：" + esc(w.right) + "</small></li>").join("") +
+        p.wrong.map((w) => "<li>" + esc(w.q) + "<br><small>" + esc(ownGet(SEC_NAME, w.sec) || "") + " " + esc(w.lv) + "｜你選：" + esc(w.pick) + "｜正解：" + esc(w.right) + "</small></li>").join("") +
         "</ol></details>" : "") +
       '<div class="export-actions"><button class="btn primary" data-pt="copy">📋 複製測驗結果（貼給 AI 出題）</button><button class="btn" data-pt="retake">重新測驗</button></div>' +
       '<label class="sr" for="ptOut">測驗結果內容</label><textarea id="ptOut" readonly hidden style="width:100%;min-height:200px;font:13px/1.6 ui-monospace,Consolas,monospace;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px"></textarea>';
