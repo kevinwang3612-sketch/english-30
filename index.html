@@ -396,8 +396,18 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 .fcol .fv { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .fcol .fd { font-size: 11px; color: var(--muted); }
 .fcol[aria-pressed="true"] .fd { color: var(--ink); font-weight: 700; }
-.ftarget { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--muted); pointer-events: none; }
-.ftarget span { position: absolute; right: 0; top: -18px; font-size: 11px; color: var(--muted); background: var(--surface); padding: 0 4px; border-radius: 4px; }
+.fbar-area { position: relative; }
+.ftick { position: absolute; left: 14%; right: 14%; border-top: 2px dashed var(--muted); pointer-events: none; }
+
+/* ---- 今天的運動菜單 ---- */
+.hwork { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; border-left: 6px solid var(--h-ex); }
+.hwork:empty { display: none; }
+.hwork-t { font-size: 14px; font-weight: 700; }
+.hwork a { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; font-size: 14px; transition: border-color .15s ease; }
+.hwork a:hover { border-color: var(--h-ex); }
+.hwork a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.hwork a .min { margin-left: auto; flex: none; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hwork p { font-size: 12px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -432,6 +442,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     <div class="habit-mode"><button class="btn small" id="habitMode" type="button"></button><p id="habitModeNote" hidden></p></div>
     <div class="todo-head" id="habitTodoHead"></div>
     <div class="habit-tasks" id="habitTasks"></div>
+    <div class="hwork" id="habitWork"></div>
     <div class="habit-extras" id="habitExtras"></div>
     <div class="hwhy" id="habitWhy"></div>
     <div class="hweek" id="habitWeek" aria-label="本週"></div>
@@ -479,12 +490,21 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       <summary>目標設定</summary>
       <form class="food-form" id="foodSetForm">
         <label class="field"><span>體重（kg）</span><input type="number" id="foodW" min="25" max="250" step="0.1" inputmode="decimal"></label>
-        <label class="field"><span>每公斤蛋白質</span>
+        <label class="field"><span>有運動的日子（每公斤）</span>
           <select id="foodF">
+            <option value="1">1.0 g</option>
             <option value="1.2">1.2 g（一般維持）</option>
             <option value="1.6">1.6 g（增肌建議）</option>
             <option value="1.8">1.8 g</option>
             <option value="2">2.0 g（訓練量大）</option>
+          </select></label>
+        <label class="field"><span>沒運動的日子（每公斤）</span>
+          <select id="foodFr">
+            <option value="1">1.0 g</option>
+            <option value="1.2">1.2 g（建議）</option>
+            <option value="1.6">1.6 g</option>
+            <option value="1.8">1.8 g</option>
+            <option value="2">2.0 g</option>
           </select></label>
         <button class="btn" type="submit">儲存</button>
       </form>
@@ -890,7 +910,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   const validHabitKey = (id, f) => DATE_RE.test(id) && HFIELD_RE.test(f) && !f.split(".").some(badKey);
   const FOOD_ID_RE = /^[a-z0-9]{6,16}$/;                                     // 每筆飲食紀錄的 ID
   const FDEL_RE = /^\d{4}-\d{2}-\d{2}\|[a-z0-9]{6,16}$/;                     // 刪除紀錄：日期|ID
-  const FOOD_F = [1.2, 1.6, 1.8, 2];                                         // 每公斤蛋白質可選的倍數
+  const FOOD_F = [1, 1.2, 1.6, 1.8, 2];                                      // 每公斤蛋白質可選的倍數
 
   /* 逐欄清理外部來的進度：鍵不符格式就丟掉，數字轉成數字，文字限制長度。
      所有路徑（載入、進度碼合併或取代、Gist 同步）都會經過這裡，畫面只會拿到乾淨的資料 */
@@ -954,7 +974,8 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     if (!v || typeof v !== "object") return o;
     const w = cNum(v.w);
     if (w >= 25 && w <= 250) o.w = Math.round(w * 10) / 10;
-    if (FOOD_F.indexOf(cNum(v.f)) >= 0) o.f = cNum(v.f);
+    if (FOOD_F.indexOf(cNum(v.f)) >= 0) o.f = cNum(v.f);      // 有運動的日子
+    if (FOOD_F.indexOf(cNum(v.fr)) >= 0) o.fr = cNum(v.fr);   // 沒運動的日子
     o.ts = cNum(v.ts);
     o.custom = (Array.isArray(v.custom) ? v.custom : []).slice(0, 12)
       .filter((c) => c && typeof c === "object" && FOOD_ID_RE.test(c.id))
@@ -1506,7 +1527,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     if (tm.days.length) lines.push("　每日：" + tm.days.map((x) => x[0].slice(5) + " " + fmtDur(x[1])).join("｜"));
     lines.push("");
     const fst = foodStats();
-    lines.push("■ 蛋白質：目標每天 " + fst.target + " g（體重 " + fst.w + " kg × " + fst.f + " g）；有紀錄 " + fst.days + " 天，平均 " + fst.avg + " g，達標 " + fst.hit + " 天");
+    lines.push("■ 蛋白質：目標 運動日 " + fst.target + " g（" + fst.w + " kg × " + fst.f + "）／休息日 " + fst.rest + " g（× " + fst.fr + "）；有紀錄 " + fst.days + " 天，平均 " + fst.avg + " g，達標 " + fst.hit + " 天，達八成以上 " + fst.near + " 天");
     if (fst.top.length) lines.push("　最常吃：" + fst.top.join("、"));
     lines.push("");
     const hardKeys = Object.keys(S.hard).sort((a, b) => {
@@ -1984,10 +2005,15 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   ];
   const MEALS = [["b", "早餐"], ["l", "午餐"], ["d", "晚餐"], ["s", "點心"]];
   const MEAL_NAME = { b: "早餐", l: "午餐", d: "晚餐", s: "點心" };
-  const DEFAULT_W = 53.8, DEFAULT_F = 1.6;
+  const DEFAULT_W = 53.8, DEFAULT_F = 1.6, DEFAULT_FR = 1.2;
   function foodW() { return cNum(S.fset.w) || DEFAULT_W; }
-  function foodF() { return cNum(S.fset.f) || DEFAULT_F; }
+  function foodF() { return cNum(S.fset.f) || DEFAULT_F; }      // 有運動的日子（每公斤）
+  function foodFr() { return cNum(S.fset.fr) || DEFAULT_FR; }   // 沒運動的日子（每公斤）
+  // 下班打卡有勾「運動」的那天算運動日，目標自動提高
+  function exOn(date) { const r = ownGet(S.habit, date); return !!(r && ownGet(r, "ex")); }
+  function foodTargetOn(date) { return Math.round(foodW() * (exOn(date) ? foodF() : foodFr())); }
   function foodTarget() { return Math.round(foodW() * foodF()); }
+  function foodTargetRest() { return Math.round(foodW() * foodFr()); }
   function foodEntries(date) {
     const day = ownGet(S.food, date) || {};
     const order = { b: 0, l: 1, d: 2, s: 3 };
@@ -1996,16 +2022,17 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   }
   function foodTotal(date) { return foodEntries(date).reduce((a, e) => a + cNum(e.p), 0); }
   function foodStats() {
-    const target = foodTarget(), names = {};
-    let days = 0, sum = 0, hit = 0;
+    const names = {};
+    let days = 0, sum = 0, hit = 0, near = 0;
     Object.keys(S.food).forEach((d) => {
-      const t = foodTotal(d);
+      const t = foodTotal(d), tg = foodTargetOn(d);
       if (!t) return;
-      days++; sum += t; if (t >= target) hit++;
+      days++; sum += t;
+      if (t >= tg) hit++; else if (t >= tg * 0.8) near++;
       foodEntries(d).forEach((e) => { names[e.n] = (names[e.n] || 0) + 1; });
     });
     const top = Object.keys(names).sort((x, y) => names[y] - names[x]).slice(0, 5).map((n) => n + " ×" + names[n]);
-    return { target: target, w: foodW(), f: foodF(), days: days, avg: days ? Math.round(sum / days) : 0, hit: hit, top: top };
+    return { target: foodTarget(), rest: foodTargetRest(), w: foodW(), f: foodF(), fr: foodFr(), days: days, avg: days ? Math.round(sum / days) : 0, hit: hit, near: near, top: top };
   }
   function defaultMeal() { const d = new Date(), h = d.getHours() + d.getMinutes() / 60; return h < 10.5 ? "b" : h < 15 ? "l" : h < 21 ? "d" : "s"; }
   function shiftDay(s, n) { const p = s.split("-").map(Number); return ymd(new Date(p[0], p[1] - 1, p[2] + n)); }
@@ -2040,9 +2067,10 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 
   function renderFood() {
     const date = foodDay, isToday = date === today();
-    const target = foodTarget(), sum = foodTotal(date), entries = foodEntries(date);
+    const target = foodTargetOn(date), sum = foodTotal(date), entries = foodEntries(date);
     const p = date.split("-").map(Number), dt = new Date(p[0], p[1] - 1, p[2]);
-    $("foodDate").textContent = (dt.getMonth() + 1) + "月" + dt.getDate() + "日 週" + "日一二三四五六"[dt.getDay()] + (isToday ? "（今天）" : "") + "，目標 " + target + " g";
+    $("foodDate").textContent = (dt.getMonth() + 1) + "月" + dt.getDate() + "日 週" + "日一二三四五六"[dt.getDay()] + (isToday ? "（今天）" : "") +
+      (exOn(date) ? "，有運動，目標 " + target + " g" : "，休息日目標 " + target + " g（打卡勾「運動」會提高到 " + foodTarget() + " g）");
     $("foodNext").disabled = isToday;
     $("foodToday").hidden = isToday;
     $("foodSum").textContent = sum;
@@ -2050,8 +2078,12 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     $("foodFill").style.width = Math.min(100, target ? Math.round(sum / target * 100) : 0) + "%";
     $("foodMeter").setAttribute("aria-label", "蛋白質 " + sum + " 公克，目標 " + target + " 公克");
     const left = target - sum;
+    // 溫和版提示：八成以上就算很不錯，沒達標也不用有壓力
+    const pct = target ? Math.round(sum / target * 100) : 0;
     $("foodLeft").textContent = !entries.length ? "還沒有紀錄。先選餐別，再點下面吃了什麼。" :
-      left > 0 ? "還差 " + left + " g" + foodSuggest(left) : "✓ 已達標" + (left < 0 ? "，多了 " + (-left) + " g" : "");
+      left <= 0 ? "✓ 已達標" + (left < 0 ? "，多了 " + (-left) + " g" : "") :
+      pct >= 80 ? "已達 " + pct + "%，很不錯了 👍 想再補的話還差 " + left + " g" + foodSuggest(left) :
+      "還差 " + left + " g" + foodSuggest(left) + "。沒補到也沒關係，大多數日子有七、八成就會進步。";
 
     // 提醒：手搖飲、只有澱粉的一餐
     const tips = [];
@@ -2105,38 +2137,39 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       log.appendChild(li);
     });
 
-    // 近 7 天長條：同一個尺度畫長條和目標線；達標實心，未達標淺色
+    // 近 7 天長條：長條和每天的目標刻度用同一個尺度；達標實心，未達標淺色。每天目標依有沒有運動而不同
     const wk = $("foodWeek"); wk.innerHTML = "";
     const dates = [];
     for (let i = 6; i >= 0; i--) dates.push(daysAgo(i));
-    const tots = dates.map(foodTotal);
-    const max = Math.max(target * 1.25, ...tots, 1), H = 84;
+    const tots = dates.map(foodTotal), tgs = dates.map(foodTargetOn);
+    const max = Math.max(foodTarget() * 1.25, ...tots, 1), H = 84;
     dates.forEach((d, i) => {
-      const t = tots[i], q = d.split("-").map(Number), dd = new Date(q[0], q[1] - 1, q[2]);
-      const label = (dd.getMonth() + 1) + "/" + dd.getDate() + " 週" + "日一二三四五六"[dd.getDay()] + "：" + t + " g（目標 " + target + " g" + (t >= target ? "，已達標" : "") + "）";
+      const t = tots[i], tg = tgs[i], q = d.split("-").map(Number), dd = new Date(q[0], q[1] - 1, q[2]);
+      const label = (dd.getMonth() + 1) + "/" + dd.getDate() + " 週" + "日一二三四五六"[dd.getDay()] + "：" + t + " g（" + (exOn(d) ? "運動日" : "休息日") + "目標 " + tg + " g" + (t >= tg ? "，已達標" : "") + "）";
       const b = el("button", "fcol");
       b.type = "button"; b.title = label; b.setAttribute("aria-label", label);
       b.setAttribute("aria-pressed", d === foodDay ? "true" : "false");
       const area = el("span", "fbar-area");
-      const bar = el("span", "fbar" + (t >= target ? "" : " under"));
+      const bar = el("span", "fbar" + (t >= tg ? "" : " under"));
       bar.style.height = Math.round(t / max * H) + "px";
       area.appendChild(bar);
+      const tick = el("span", "ftick");
+      tick.style.bottom = Math.round(tg / max * H) + "px";
+      area.appendChild(tick);
       b.appendChild(area);
       b.appendChild(el("span", "fv", t ? String(t) : "–"));
-      b.appendChild(el("span", "fd", "日一二三四五六"[dd.getDay()]));
+      b.appendChild(el("span", "fd", "日一二三四五六"[dd.getDay()] + (exOn(d) ? "💪" : "")));
       b.addEventListener("click", () => { foodDay = d; foodFollowToday = d === today(); renderFood(); });
       wk.appendChild(b);
     });
-    const line = el("div", "ftarget");
-    line.style.top = Math.round(H - target / max * H) + "px";
-    line.appendChild(el("span", "", "目標 " + target + " g"));
-    wk.appendChild(line);
 
     // 目標設定與常用食物管理
-    const wIn = $("foodW"), fIn = $("foodF");
+    const wIn = $("foodW"), fIn = $("foodF"), frIn = $("foodFr");
     if (document.activeElement !== wIn) wIn.value = foodW();
     if (document.activeElement !== fIn) fIn.value = String(foodF());
-    $("foodSetNote").textContent = "目前目標：" + foodW() + " kg × " + foodF() + " g ＝ 每天 " + target + " g，每餐約 " + Math.round(target / 3) + " g。" + (S.fset.custom.length ? "下面是你存的常用按鈕，按 ✕ 可以移除：" : "");
+    if (document.activeElement !== frIn) frIn.value = String(foodFr());
+    $("foodSetNote").textContent = "目前目標：有運動的日子 " + foodTarget() + " g，沒運動的日子 " + foodTargetRest() + " g（" + foodW() + " kg × 每公斤 " + foodF() + "／" + foodFr() + " g）。" +
+      "在「下班打卡」勾了「運動」，那天就自動用運動日的目標。" + (S.fset.custom.length ? "下面是你存的常用按鈕，按 ✕ 可以移除：" : "");
     const cl = $("foodCustomList"); cl.innerHTML = "";
     S.fset.custom.forEach((c) => {
       const li = el("li");
@@ -2171,13 +2204,14 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   });
   $("foodSetForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    const w = cNum($("foodW").value), f = cNum($("foodF").value);
+    const w = cNum($("foodW").value), f = cNum($("foodF").value), fr = cNum($("foodFr").value);
     if (!(w >= 25 && w <= 250)) { toast("體重請輸入 25–250 之間的數字"); return; }
     S.fset.w = Math.round(w * 10) / 10;
     S.fset.f = FOOD_F.indexOf(f) >= 0 ? f : DEFAULT_F;
+    S.fset.fr = FOOD_F.indexOf(fr) >= 0 ? fr : DEFAULT_FR;
     S.fset.ts = Date.now();
     save(); renderFood();
-    toast("已更新目標：每天 " + foodTarget() + " g");
+    toast("已更新：運動日 " + foodTarget() + " g、休息日 " + foodTargetRest() + " g");
   });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;
@@ -2476,6 +2510,32 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       });
     }
 
+    // 每週運動菜單（游書庭－樂活有氧的影片）：週一、三、五做肌力，其他日子選做伸展
+    const YT = "https://www.youtube.com/watch?v=";
+    const WARM = ["MrDsTA4uZxI", "5 分鐘暖身操", 6];
+    const STRETCH = ["eJbPPcN69h8", "15 分鐘全身伸展", 16];
+    const WORKOUT = {
+      1: { t: "胸肌日・約 13 分鐘", v: [WARM, ["f0EoE8V9Ciw", "6 分鐘徒手胸肌（初階）", 7]] },
+      3: { t: "腿＋核心日・約 23 分鐘", v: [WARM, ["G5zBIkKMVE8", "10 分鐘深蹲訓練（中階，做不完就分段）", 10], ["EFalzsXwyZ8", "6 分鐘下腹肌", 7]] },
+      5: { t: "胸＋手臂日・約 16 分鐘", v: [WARM, ["wymo54pDaL0", "伏地挺身（新手可跪姿）", 10]] }
+    };
+    function renderWorkout(showPlan) {
+      const box = $("habitWork");
+      box.innerHTML = "";
+      if (!showPlan) return;
+      const plan = WORKOUT[sel.getDay()];
+      const list = plan ? plan.v : [STRETCH];
+      box.appendChild(el("p", "hwork-t", plan ? "💪 今天的運動菜單：" + plan.t : "🧘 今天選做：睡前伸展放鬆"));
+      list.forEach((v) => {
+        const a = document.createElement("a");
+        a.href = YT + v[0]; a.target = "_blank"; a.rel = "noopener noreferrer";
+        a.appendChild(document.createTextNode("▶ " + v[1]));
+        a.appendChild(el("span", "min", v[2] + " 分"));
+        box.appendChild(a);
+      });
+      box.appendChild(el("p", "", plan ? "很累的話只做暖身 5 分鐘也算完成。做完記得在上面勾「運動」，今天的蛋白質目標會提高到 " + foodTarget() + " g。" : "伸展不算肌力訓練，蛋白質目標維持休息日的量就好。"));
+    }
+
     const REASONS = ["太累", "加班", "煮飯太晚", "身體不適", "下雨", "臨時有事", "忘記了"];
     const whyOf = (id, k) => (H[id] && H[id].why && H[id].why[k]) || {};
     function setWhy(id, k, patch) {
@@ -2644,8 +2704,10 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       }
 
       renderTodo();
+      renderWorkout(showPlan);
       renderWhy();
       renderStats();
+      renderFood();   // 勾或取消「運動」會改變當天的蛋白質目標
       const det = $("habitDetails");
       if (showPlan) {
         det.hidden = false;
