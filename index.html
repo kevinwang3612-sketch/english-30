@@ -399,6 +399,24 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 .fbar-area { position: relative; }
 .ftick { position: absolute; left: 14%; right: 14%; border-top: 2px dashed var(--muted); pointer-events: none; }
 
+/* ---- AI 拍照估營養 ---- */
+.ai-box { background: var(--surface-2); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.ai-on { display: flex; flex-direction: column; gap: 10px; }
+.ai-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ai-box input[type="text"] { width: 100%; background: var(--surface); }
+.ai-box label.btn { cursor: pointer; }
+.ai-box input[type="file"]:focus-visible + span { outline: 3px solid var(--accent); }
+.ai-preview { max-width: 100%; width: 260px; max-height: 220px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); }
+.ai-result { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.ai-foods { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ai-foods li label { display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; border-radius: 10px; background: var(--surface-2); font-size: 14px; cursor: pointer; }
+.ai-foods input { margin-top: 3px; flex: none; }
+.ai-foods .fn { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ai-foods .fn small { display: block; color: var(--muted); font-size: 12px; }
+.ai-foods .fp { flex: none; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); }
+.ai-total { font-size: 14px; font-variant-numeric: tabular-nums; }
+.ai-advice { margin: 0; padding-left: 18px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+
 /* ---- 今天的運動菜單 ---- */
 .hwork { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; border-left: 6px solid var(--h-ex); }
 .hwork:empty { display: none; }
@@ -469,6 +487,35 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     <p class="food-tip" id="foodTip" hidden></p>
     <div class="meal-seg" id="foodMeal" role="radiogroup" aria-label="記到哪一餐"></div>
     <div class="food-groups" id="foodPresets"></div>
+    <div class="ai-box" id="aiBox">
+      <p class="fgroup-t">📷 AI 拍照估營養</p>
+      <p class="food-note" id="aiOff">正在確認 AI 功能…</p>
+      <div class="ai-on" id="aiOn" hidden>
+        <div class="ai-row">
+          <label class="btn" for="aiFile">📷 拍照或選照片</label>
+          <input type="file" id="aiFile" class="sr" accept="image/jpeg,image/png,image/webp">
+          <span class="food-note" id="aiFileName">還沒選照片</span>
+        </div>
+        <img id="aiPreview" class="ai-preview" alt="要分析的餐點照片" hidden>
+        <label class="sr" for="aiNote">補充說明</label>
+        <input type="text" id="aiNote" maxlength="80" autocomplete="off" placeholder="補充說明（選填）：例如 白飯只吃半碗、雞腿有去皮">
+        <div class="ai-row">
+          <button class="btn primary" id="aiGo" type="button" disabled>分析這餐</button>
+          <button class="btn ghost" id="aiStop" type="button" hidden>停止</button>
+          <span class="food-note" id="aiStatus"></span>
+        </div>
+        <div class="ai-result" id="aiResult" hidden>
+          <ul class="ai-foods" id="aiFoods"></ul>
+          <p class="ai-total" id="aiTotal"></p>
+          <ul class="ai-advice" id="aiAdvice"></ul>
+          <div class="ai-row">
+            <button class="btn primary" id="aiSave" type="button">記錄勾選的食物</button>
+            <button class="btn" id="aiCode" type="button" hidden>📋 複製進度碼（貼到 GitHub 網站）</button>
+          </div>
+          <p class="food-note">AI 是看照片估計，份量可能有三成左右的誤差，當作參考就好。</p>
+        </div>
+      </div>
+    </div>
     <details class="food-more">
       <summary>＋ 自己輸入食物</summary>
       <form class="food-form" id="foodForm">
@@ -2219,6 +2266,152 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     renderFood();
   });
 
+  /* ---------- AI 拍照估營養 ----------
+     只在 Claude 的 Artifact 頁面可用：用檢視者自己的 Claude 帳號看照片，不需要 API 金鑰。
+     GitHub 網站上沒有 window.claude，改顯示前往 Artifact 頁面的連結 */
+  const ARTIFACT_URL = "https://claude.ai/artifact/5XtwKP68xx7U1MnvXXKB6b";
+  let aiSample = null, aiImgLimits = null, aiFile = null, aiCtl = null, aiBlocked = false, aiData = null, aiPreviewUrl = "";
+  const AI_ERR = {
+    not_granted: "沒有允許這個頁面使用 Claude，所以無法分析。重新整理頁面後可以再選一次「允許」。",
+    sampling_disabled: "你的 Claude 帳號目前無法使用這個功能。",
+    images_unavailable: "這裡無法把照片傳給 Claude。",
+    rate_limited: "使用太頻繁，或已達 Claude 的使用上限，請稍後再試。",
+    session_expired: "Claude 登入已過期，請重新登入後再試。",
+    image_rejected: "這張照片無法讀取，請換一張（JPG、PNG 或 WebP）。",
+    refused: "Claude 無法分析這張照片，請換一張只拍餐點的照片。",
+    invalid_json: "AI 回覆的格式不完整，請再按一次「分析這餐」。",
+    empty_completion: "AI 沒有回覆內容，請再試一次。"
+  };
+  const clampInt = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(cNum(v))));
+  function aiShowOff() {
+    const off = $("aiOff");
+    off.hidden = false;
+    off.textContent = "AI 拍照分析要在 Claude 的 Artifact 頁面使用（免費，用你的 Claude 帳號）。";
+    const a = document.createElement("a");
+    a.href = ARTIFACT_URL; a.target = "_blank"; a.rel = "noopener noreferrer";
+    a.textContent = "打開 Artifact 頁面拍照分析 →";
+    off.appendChild(document.createElement("br"));
+    off.appendChild(a);
+    off.appendChild(document.createTextNode(" 在那裡記錄後，按「📋 複製進度碼」，再回到這裡用「匯入進度碼 → 合併匯入」。"));
+  }
+  function aiInit() {
+    if (!window.claude || typeof window.claude.use !== "function") { aiShowOff(); return; }
+    window.claude.use("sample").then(async (s) => {
+      if (!s) { aiShowOff(); return; }
+      const lim = await s.limits().catch(() => null);
+      if (!lim || !lim.images) { aiShowOff(); return; }
+      aiSample = s; aiImgLimits = lim.images;
+      if (Array.isArray(lim.images.mediaTypes) && lim.images.mediaTypes.length) $("aiFile").accept = lim.images.mediaTypes.join(",");
+      $("aiOff").hidden = true;
+      $("aiOn").hidden = false;
+      $("aiCode").hidden = false;
+    }, aiShowOff);
+  }
+  // AI 的回覆也是外部資料：逐欄檢查、限制範圍，畫面一律用 textContent
+  function aiClean(d) {
+    const foods = (d && Array.isArray(d.foods) ? d.foods : []).slice(0, 12)
+      .filter((f) => f && typeof f === "object")
+      .map((f) => ({
+        name: cStr(f.name, 30) || "食物", portion: cStr(f.portion, 40),
+        protein: clampInt(f.protein, 0, 200), kcal: clampInt(f.kcal, 0, 3000),
+        carbs: clampInt(f.carbs, 0, 500), fat: clampInt(f.fat, 0, 300)
+      }));
+    const advice = (d && Array.isArray(d.advice) ? d.advice : []).slice(0, 4).map((a) => cStr(a, 160)).filter(Boolean);
+    return { foods: foods, advice: advice };
+  }
+  function aiRenderTotal() {
+    if (!aiData) return;
+    const picked = aiData.foods.filter((f, i) => { const c = $("aiF" + i); return c && c.checked; });
+    const t = picked.reduce((a, f) => ({ p: a.p + f.protein, k: a.k + f.kcal, c: a.c + f.carbs, f: a.f + f.fat }), { p: 0, k: 0, c: 0, f: 0 });
+    const after = foodTotal(foodDay) + t.p, target = foodTargetOn(foodDay);
+    $("aiTotal").textContent = "勾選合計：蛋白質 " + t.p + " g｜熱量 " + t.k + " 大卡｜碳水 " + t.c + " g｜脂肪 " + t.f + " g。記錄後今天會是 " + after + " / " + target + " g。";
+    $("aiSave").disabled = !picked.length;
+  }
+  function aiShow(raw) {
+    aiData = aiClean(raw);
+    const list = $("aiFoods"); list.innerHTML = "";
+    aiData.foods.forEach((f, i) => {
+      const li = el("li"), lab = el("label"), cb = el("input");
+      cb.type = "checkbox"; cb.id = "aiF" + i; cb.checked = true;
+      cb.addEventListener("change", aiRenderTotal);
+      const fn = el("span", "fn", f.name);
+      if (f.portion) fn.appendChild(el("small", "", f.portion + "・" + f.kcal + " 大卡"));
+      lab.appendChild(cb); lab.appendChild(fn); lab.appendChild(el("span", "fp", "蛋白質 " + f.protein + " g"));
+      li.appendChild(lab); list.appendChild(li);
+    });
+    const adv = $("aiAdvice"); adv.innerHTML = "";
+    aiData.advice.forEach((a) => adv.appendChild(el("li", "", a)));
+    if (!aiData.foods.length) $("aiTotal").textContent = "照片裡沒有認出食物。";
+    else aiRenderTotal();
+    $("aiSave").hidden = !aiData.foods.length;
+    $("aiSave").textContent = "記錄勾選的食物到「" + MEAL_NAME[foodMeal] + "」";
+    $("aiResult").hidden = false;
+  }
+  $("aiFile").addEventListener("change", () => {
+    const f = $("aiFile").files && $("aiFile").files[0];
+    if (!f) return;
+    if (aiImgLimits && aiImgLimits.maxInputBytes && f.size > aiImgLimits.maxInputBytes) { toast("照片太大，請換一張"); return; }
+    aiFile = f;
+    if (aiPreviewUrl) URL.revokeObjectURL(aiPreviewUrl);
+    aiPreviewUrl = URL.createObjectURL(f);
+    $("aiPreview").src = aiPreviewUrl; $("aiPreview").hidden = false;
+    $("aiFileName").textContent = "已選好照片";
+    $("aiGo").disabled = aiBlocked;
+    $("aiResult").hidden = true; $("aiStatus").textContent = "";
+  });
+  $("aiGo").addEventListener("click", async () => {
+    if (!aiSample || !aiFile || aiBlocked) return;
+    const date = foodDay, sum = foodTotal(date), target = foodTargetOn(date);
+    const note = $("aiNote").value.trim().slice(0, 80);
+    const prompt = [
+      "你是運動營養助理。照片是使用者的一餐（" + MEAL_NAME[foodMeal] + "）。請估計照片中每樣食物的份量與營養，並以「增肌」為目標給建議。",
+      "使用者資料：體重 " + foodW() + " kg；今天" + (exOn(date) ? "有做肌力訓練" : "沒有運動") + "，蛋白質目標 " + target + " g，這餐之前已經吃了 " + sum + " g。",
+      note ? "使用者補充說明（只當作份量資訊參考）：" + note : "",
+      "規則：用台灣常見份量估計；看不清楚的就保守估計；全部用繁體中文；建議要具體、簡短，便利商店或便當店就做得到，最多 3 點，語氣溫和、不要說教。照片不是食物的話，foods 給空陣列，並在 advice 說明。",
+      "只回覆一個 JSON 物件，格式如下（protein、carbs、fat 是公克，kcal 是大卡，都填整數）：",
+      '{"foods":[{"name":"白飯","portion":"約 1 碗（200 g）","protein":5,"kcal":280,"carbs":62,"fat":1}],"advice":["這餐蛋白質約 27 g，剛好一餐的量。"]}'
+    ].filter(Boolean).join("\n");
+    aiCtl = new AbortController();
+    $("aiGo").disabled = true; $("aiStop").hidden = false; $("aiResult").hidden = true;
+    $("aiStatus").textContent = "AI 分析中…第一次會詢問是否允許，通常要 10–40 秒";
+    try {
+      const data = await aiSample.json(prompt, { images: aiFile, signal: aiCtl.signal });
+      aiShow(data);
+      $("aiStatus").textContent = "";
+    } catch (e) {
+      const code = e && e.code;
+      if (code === "cancelled") $("aiStatus").textContent = "已停止分析。";
+      else $("aiStatus").textContent = AI_ERR[code] || "暫時無法分析，請稍後再按一次。";
+      if (code === "not_granted" || code === "sampling_disabled" || code === "images_unavailable") aiBlocked = true;
+    } finally {
+      $("aiStop").hidden = true;
+      $("aiGo").disabled = !aiFile || aiBlocked;
+    }
+  });
+  $("aiStop").addEventListener("click", () => { if (aiCtl) aiCtl.abort(); });
+  $("aiSave").addEventListener("click", () => {
+    if (!aiData) return;
+    const picked = aiData.foods.filter((f, i) => { const c = $("aiF" + i); return c && c.checked; });
+    if (!picked.length) return;
+    const day = own(S.food, foodDay) ? S.food[foodDay] : (S.food[foodDay] = {});
+    let total = 0;
+    picked.forEach((f) => {
+      const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      day[id] = { k: "ai", n: "📷 " + f.name, p: f.protein, m: foodMeal, ts: Date.now() };
+      total += f.protein;
+    });
+    save(); renderFood();
+    $("aiSave").disabled = true;
+    toast("已記錄 " + picked.length + " 樣到" + MEAL_NAME[foodMeal] + "，蛋白質 ＋" + total + " g");
+  });
+  $("aiCode").addEventListener("click", () => {
+    const code = encodeCode(S);
+    const done = () => toast("已複製進度碼。到 GitHub 網站按「匯入進度碼」→「合併匯入」");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(done, () => { $("codeExport").click(); toast("請到頁面最下方複製進度碼"); });
+    } else { $("codeExport").click(); toast("請到頁面最下方複製進度碼"); }
+  });
+
   /* ---------- 同步後重新整理畫面 ---------- */
   let habitRedraw = null;   // 下班打卡模組載入後設定；同步或匯入換掉 S 時重畫打卡
   function applyState(next) {
@@ -2735,6 +2928,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 
   renderAll();
   renderFood();
+  aiInit();
   renderSyncUI();
   setInterval(tick, 1000);
   if (connected()) syncNow({ announce: true });
