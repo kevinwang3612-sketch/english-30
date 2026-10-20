@@ -315,6 +315,12 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 .why-row { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; border-left: 6px solid var(--c); }
 .why-row.ex { --c: var(--h-ex); } .why-row.soak { --c: var(--h-soak); } .why-row.eng { --c: var(--h-eng); }
 .why-row b { font-size: 14px; }
+.why-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.why-done { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 6px 4px 12px; border-radius: 12px; background: var(--surface-2); border-left: 6px solid var(--c); font-size: 14px; }
+.why-done.ex { --c: var(--h-ex); } .why-done.soak { --c: var(--h-soak); } .why-done.eng { --c: var(--h-eng); }
+.why-done b { flex: none; }
+.why-done span { flex: 1; min-width: 0; color: var(--muted); overflow-wrap: anywhere; }
+.why-done .btn { flex: none; }
 .wchips { display: flex; flex-wrap: wrap; gap: 6px; }
 .wchip { font: inherit; font-size: 13px; color: var(--ink); cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 4px 12px; min-height: 32px; }
 .wchip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
@@ -2741,6 +2747,9 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       if (!Object.keys(H[id]).length) delete H[id];
       saveH(id, "why." + k);
     }
+    const whyOpen = new Set();   // 使用者按「修改」重新展開的格子（日期|習慣）
+    // 摺疊後把鍵盤焦點留在那一格的「修改」按鈕上
+    const focusWhy = (key) => { const b = [...$("habitWhy").querySelectorAll("[data-why]")].find((x) => x.dataset.why === key); if (b) b.focus(); };
     function renderWhy() {
       const box = $("habitWhy");
       box.innerHTML = "";
@@ -2748,21 +2757,53 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       const miss = TASKS.filter((t) => !val(sel, t.k));
       if (!miss.length) return;
       const id = kOf(sel);
+      const keyOfWhy = (k) => id + "|" + k;
+      const isFilled = (k) => { const w = whyOf(id, k); return !!(w.r || w.n); };
+      const allDone = miss.every((t) => isFilled(t.k) && !whyOpen.has(keyOfWhy(t.k)));
       const title = document.createElement("p");
       title.className = "hwhy-title";
-      title.textContent = kOf(sel) === kOf(TODAY) ? "還沒打勾的格子，沒做成的話記一下原因：" : "這天沒打勾的格子，補記原因：";
+      title.textContent = allDone ? "沒做的原因都記下了：" :
+        kOf(sel) === kOf(TODAY) ? "還沒打勾的格子，沒做成的話記一下原因：" : "這天沒打勾的格子，補記原因：";
       box.appendChild(title);
       miss.forEach((t) => {
-        const cur = whyOf(id, t.k);
+        const cur = whyOf(id, t.k), key = keyOfWhy(t.k);
+        // 已經記了原因：摺疊成一行，點「修改」再展開
+        if (isFilled(t.k) && !whyOpen.has(key)) {
+          const done = document.createElement("div");
+          done.className = "why-done " + t.k;
+          done.appendChild(el("b", "", t.n));
+          done.appendChild(el("span", "", (cur.r || "") + (cur.r && cur.n ? "・" : "") + (cur.n || "")));
+          const edit = el("button", "btn small ghost", "✎ 修改");
+          edit.type = "button"; edit.setAttribute("aria-label", "修改" + t.n + "沒做的原因");
+          edit.dataset.why = key;
+          edit.addEventListener("click", () => { whyOpen.add(key); draw(); });
+          done.appendChild(edit);
+          box.appendChild(done);
+          return;
+        }
         const row = document.createElement("div");
         row.className = "why-row " + t.k;
-        const nm = document.createElement("b"); nm.textContent = t.n; row.appendChild(nm);
+        const head = el("div", "why-head");
+        head.appendChild(el("b", "", t.n));
+        if (isFilled(t.k)) {
+          const fold = el("button", "btn small ghost", "✓ 收合");
+          fold.type = "button";
+          fold.addEventListener("click", () => { whyOpen.delete(key); draw(); focusWhy(key); });
+          head.appendChild(fold);
+        }
+        row.appendChild(head);
         const chips = document.createElement("div"); chips.className = "wchips"; chips.setAttribute("role", "group"); chips.setAttribute("aria-label", t.n + "沒做的原因");
         REASONS.forEach((r) => {
           const c = document.createElement("button");
           c.type = "button"; c.className = "wchip"; c.textContent = r;
           c.setAttribute("aria-pressed", cur.r === r ? "true" : "false");
-          c.addEventListener("click", () => { setWhy(id, t.k, { r: cur.r === r ? "" : r }); draw(); });
+          c.addEventListener("click", () => {
+            const next = cur.r === r ? "" : r;
+            setWhy(id, t.k, { r: next });
+            if (next) whyOpen.delete(key);   // 選了原因就自動摺疊
+            draw();
+            if (next) focusWhy(key);
+          });
           chips.appendChild(c);
         });
         row.appendChild(chips);
