@@ -316,6 +316,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 .why-row.ex { --c: var(--h-ex); } .why-row.soak { --c: var(--h-soak); } .why-row.eng { --c: var(--h-eng); }
 .why-row b { font-size: 14px; }
 .why-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.why-toggle { align-self: flex-start; color: var(--muted); }
 .why-done { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 6px 4px 12px; border-radius: 12px; background: var(--surface-2); border-left: 6px solid var(--c); font-size: 14px; }
 .why-done.ex { --c: var(--h-ex); } .why-done.soak { --c: var(--h-soak); } .why-done.eng { --c: var(--h-eng); }
 .why-done b { flex: none; }
@@ -405,6 +406,36 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 .fbar-area { position: relative; }
 .ftick { position: absolute; left: 14%; right: 14%; border-top: 2px dashed var(--muted); pointer-events: none; }
 
+/* ---- 分頁（底部分頁列） ---- */
+.app { padding-block: 20px calc(96px + env(safe-area-inset-bottom, 0px)); }
+.tab { display: flex; flex-direction: column; gap: 16px; }
+.tab-title { font-size: 22px; font-weight: 800; }
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 9;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;
+  padding: 6px max(8px, calc((100% - 560px) / 2)) calc(6px + env(safe-area-inset-bottom, 0px));
+  background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgba(18, 64, 56, .08);
+}
+.tabbar button {
+  font: inherit; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 52px; padding: 6px 0;
+  background: none; border: 0; border-radius: 12px; transition: background-color .15s ease, color .15s ease;
+}
+.tabbar button span { font-size: 20px; line-height: 1.1; }
+.tabbar button:hover { color: var(--ink); }
+.tabbar button[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+.tabbar button:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.toast { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+/* 今天的進度摘要 */
+.today-sum { display: flex; flex-direction: column; gap: 10px; }
+.tsum-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.tsum-k { font-size: 14px; font-weight: 700; flex: none; min-width: 5em; }
+.tsum-meter { flex: 1 1 100px; }
+.tsum-v { font-size: 14px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.tsum-v.grow { flex: 1 1 160px; min-width: 0; }
+.more-pt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.more-pt > div { flex: 1 1 260px; min-width: 0; }
+
 /* ---- 三餐檢查（下班打卡裡） ---- */
 .hmeals { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; border-left: 6px solid var(--accent); }
 .hmeals:empty { display: none; }
@@ -449,24 +480,21 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 </head>
 <body>
 <div class="app">
-  <header class="top">
-    <div>
-      <p class="eyebrow">30-Day English Plan · CEFR B1 · Vocabulary Focus</p>
-      <h1>30 天英語跟讀卡</h1>
-      <div class="head-actions">
-        <button class="btn small" id="ptOpen">🧭 程度測驗</button>
-        <button class="lvl-chip" id="ptChip" hidden></button>
+  <!-- 🏠 今天 -->
+  <section class="tab" data-tab="today" id="tab-today">
+    <section class="panel today-sum" aria-label="今天的進度">
+      <div class="tsum-row">
+        <span class="tsum-k">🥚 蛋白質</span>
+        <div class="fmeter tsum-meter" aria-hidden="true"><div class="fmeter-fill" id="tsumFoodFill"></div></div>
+        <span class="tsum-v" id="tsumFood">0 / 65 g</span>
+        <button class="btn small" type="button" data-go="food">記錄</button>
       </div>
-    </div>
-    <div class="stats" id="stats">
-      <div class="stat"><b id="stDone">0/30</b><span>完成天數</span></div>
-      <div class="stat"><b id="stAvg">–</b><span>平均跟讀分</span></div>
-      <div class="stat"><b id="stAtt">0</b><span>跟讀次數</span></div>
-      <div class="stat"><b id="stHard">0</b><span>錯題本</span></div>
-      <div class="stat"><b id="stTime">0 分</b><span>今日學習</span><small id="stWeek">近 7 天 0 分</small></div>
-    </div>
-  </header>
-  <div class="progress" aria-hidden="true"><div class="bar" id="progressBar"></div></div>
+      <div class="tsum-row">
+        <span class="tsum-k">📖 英文</span>
+        <span class="tsum-v grow" id="tsumEng"></span>
+        <button class="btn small primary" type="button" data-go="english">繼續練習</button>
+      </div>
+    </section>
   <section class="panel habit" id="habitPanel" aria-labelledby="habitTitle">
     <div class="habit-head">
       <div>
@@ -488,104 +516,29 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     <details id="habitStats"><summary>原因小日誌（近 4 週）</summary><div id="habitStatsBody"></div></details>
     <button class="btn ghost small hreset" id="habitReset" type="button">清除打卡紀錄</button>
   </section>
-
-  <section class="panel food" id="foodPanel" aria-labelledby="foodTitle">
-    <div class="food-head">
-      <div>
-        <h3 id="foodTitle">🍱 蛋白質紀錄</h3>
-        <p id="foodDate"></p>
-      </div>
-      <div class="food-nav">
-        <button class="btn icon small" id="foodPrev" type="button" aria-label="前一天">‹</button>
-        <button class="btn small" id="foodToday" type="button">回到今天</button>
-        <button class="btn icon small" id="foodNext" type="button" aria-label="後一天">›</button>
-      </div>
-    </div>
-    <div class="food-total"><b id="foodSum">0</b><span id="foodGoal">/ 86 g</span></div>
-    <div class="fmeter" id="foodMeter" role="img" aria-label=""><div class="fmeter-fill" id="foodFill"></div></div>
-    <p class="food-left" id="foodLeft"></p>
-    <p class="food-tip" id="foodTip" hidden></p>
-    <div class="meal-seg" id="foodMeal" role="radiogroup" aria-label="記到哪一餐"></div>
-    <div class="food-groups" id="foodPresets"></div>
-    <div class="ai-box" id="aiBox">
-      <p class="fgroup-t">📷 AI 拍照估營養</p>
-      <p class="food-note" id="aiOff">正在確認 AI 功能…</p>
-      <div class="ai-on" id="aiOn" hidden>
-        <div class="ai-row">
-          <label class="btn" for="aiFile">📷 拍照或選照片</label>
-          <input type="file" id="aiFile" class="sr" accept="image/jpeg,image/png,image/webp">
-          <span class="food-note" id="aiFileName">還沒選照片</span>
-        </div>
-        <img id="aiPreview" class="ai-preview" alt="要分析的餐點照片" hidden>
-        <label class="sr" for="aiNote">補充說明</label>
-        <input type="text" id="aiNote" maxlength="80" autocomplete="off" placeholder="補充說明（選填）：例如 白飯只吃半碗、雞腿有去皮">
-        <div class="ai-row">
-          <button class="btn primary" id="aiGo" type="button" disabled>分析這餐</button>
-          <button class="btn ghost" id="aiStop" type="button" hidden>停止</button>
-          <span class="food-note" id="aiStatus"></span>
-        </div>
-        <div class="ai-result" id="aiResult" hidden>
-          <ul class="ai-foods" id="aiFoods"></ul>
-          <p class="ai-total" id="aiTotal"></p>
-          <ul class="ai-advice" id="aiAdvice"></ul>
-          <div class="ai-row">
-            <button class="btn primary" id="aiSave" type="button">記錄勾選的食物</button>
-            <button class="btn" id="aiCode" type="button" hidden>📋 複製進度碼（貼到 GitHub 網站）</button>
-          </div>
-          <p class="food-note">AI 是看照片估計，份量可能有三成左右的誤差，當作參考就好。</p>
-        </div>
-      </div>
-    </div>
-    <details class="food-more">
-      <summary>＋ 自己輸入食物</summary>
-      <form class="food-form" id="foodForm">
-        <label class="sr" for="foodName">食物名稱</label>
-        <input type="text" id="foodName" maxlength="30" autocomplete="off" placeholder="例如：滷雞腿">
-        <label class="sr" for="foodGram">蛋白質公克</label>
-        <input type="number" id="foodGram" min="0" max="200" step="1" inputmode="numeric" placeholder="蛋白質 g">
-        <label class="food-check"><input type="checkbox" id="foodKeep"> 存成常用按鈕</label>
-        <button class="btn" type="submit">記錄</button>
-      </form>
-      <p class="food-note">不知道蛋白質多少？看包裝的「營養標示」，或用：肉類每 100 g 約 20–25 g、一顆蛋約 7 g。</p>
-    </details>
-    <ul class="food-log" id="foodLog"></ul>
-    <div class="ai-row" id="foodComboRow"></div>
-    <div>
-      <p class="label">近 7 天蛋白質（點長條看那天）</p>
-      <div class="fweek" id="foodWeek"></div>
-    </div>
-    <details class="food-more" id="foodSetBox">
-      <summary>目標設定</summary>
-      <form class="food-form" id="foodSetForm">
-        <label class="field"><span>體重（kg）</span><input type="number" id="foodW" min="25" max="250" step="0.1" inputmode="decimal"></label>
-        <label class="field"><span>有運動的日子（每公斤）</span>
-          <select id="foodF">
-            <option value="1">1.0 g</option>
-            <option value="1.2">1.2 g（一般維持）</option>
-            <option value="1.6">1.6 g（增肌建議）</option>
-            <option value="1.8">1.8 g</option>
-            <option value="2">2.0 g（訓練量大）</option>
-          </select></label>
-        <label class="field"><span>沒運動的日子（每公斤）</span>
-          <select id="foodFr">
-            <option value="1">1.0 g</option>
-            <option value="1.2">1.2 g（建議）</option>
-            <option value="1.6">1.6 g</option>
-            <option value="1.8">1.8 g</option>
-            <option value="2">2.0 g</option>
-          </select></label>
-        <button class="btn" type="submit">儲存</button>
-      </form>
-      <p class="food-note" id="foodSetNote"></p>
-      <p class="food-note">一鍵組合（按 ✕ 移除；在紀錄下方按「💾 存成一鍵組合」可以新增或更新）：</p>
-      <ul class="food-log" id="foodComboList"></ul>
-      <ul class="food-log" id="foodCustomList"></ul>
-    </details>
   </section>
 
-
+  <!-- 📖 英文 -->
+  <section class="tab" data-tab="english" id="tab-english" hidden>
+  <header class="top">
+    <div>
+      <p class="eyebrow">30-Day English Plan · CEFR B1 · Vocabulary Focus</p>
+      <h1>30 天英語跟讀卡</h1>
+      <div class="head-actions">
+        <button class="btn small" id="ptOpen">🧭 程度測驗</button>
+        <button class="lvl-chip" id="ptChip" hidden></button>
+      </div>
+    </div>
+    <div class="stats" id="stats">
+      <div class="stat"><b id="stDone">0/30</b><span>完成天數</span></div>
+      <div class="stat"><b id="stAvg">–</b><span>平均跟讀分</span></div>
+      <div class="stat"><b id="stAtt">0</b><span>跟讀次數</span></div>
+      <div class="stat"><b id="stHard">0</b><span>錯題本</span></div>
+      <div class="stat"><b id="stTime">0 分</b><span>今日學習</span><small id="stWeek">近 7 天 0 分</small></div>
+    </div>
+  </header>
+  <div class="progress" aria-hidden="true"><div class="bar" id="progressBar"></div></div>
   <section class="card test" id="testView" hidden aria-live="polite"></section>
-
   <div class="study" id="studyView">
   <div class="panel banner" id="ptBanner">
     <div>
@@ -671,19 +624,118 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
         <ul class="hardlist" id="hardList"></ul>
         <p class="empty" id="hardEmpty">按卡片右上角的「☆ 加入錯題本」收藏難詞；跟讀低於 70 分的句子也會自動加入。</p>
       </section>
-      <section class="panel tips">
-        <h3>使用方式</h3>
-        <ul>
-          <li>每天 4 個單字：先聽、再慢速跟讀、最後開麥克風挑戰。</li>
-          <li>90 分以上 Awesome、70–89 分 Good job、70 分以下 Try again。</li>
-          <li>鍵盤 <kbd>←</kbd> <kbd>→</kbd> 切換卡片。</li>
-          <li>進度自動存在這台電腦的瀏覽器裡。</li>
-          <li>學習時間只在網頁開著、有操作時累計，閒置超過 1 分鐘會暫停。</li>
-        </ul>
-      </section>
     </aside>
   </div>
+  </div>
+  </section>
 
+  <!-- 🍱 飲食 -->
+  <section class="tab" data-tab="food" id="tab-food" hidden>
+  <section class="panel food" id="foodPanel" aria-labelledby="foodTitle">
+    <div class="food-head">
+      <div>
+        <h3 id="foodTitle">🍱 蛋白質紀錄</h3>
+        <p id="foodDate"></p>
+      </div>
+      <div class="food-nav">
+        <button class="btn icon small" id="foodPrev" type="button" aria-label="前一天">‹</button>
+        <button class="btn small" id="foodToday" type="button">回到今天</button>
+        <button class="btn icon small" id="foodNext" type="button" aria-label="後一天">›</button>
+      </div>
+    </div>
+    <div class="food-total"><b id="foodSum">0</b><span id="foodGoal">/ 86 g</span></div>
+    <div class="fmeter" id="foodMeter" role="img" aria-label=""><div class="fmeter-fill" id="foodFill"></div></div>
+    <p class="food-left" id="foodLeft"></p>
+    <p class="food-tip" id="foodTip" hidden></p>
+    <div class="meal-seg" id="foodMeal" role="radiogroup" aria-label="記到哪一餐"></div>
+    <div class="food-groups" id="foodPresets"></div>
+    <div class="ai-box" id="aiBox">
+      <p class="fgroup-t">📷 AI 拍照估營養</p>
+      <p class="food-note" id="aiOff">正在確認 AI 功能…</p>
+      <div class="ai-on" id="aiOn" hidden>
+        <div class="ai-row">
+          <label class="btn" for="aiFile">📷 拍照或選照片</label>
+          <input type="file" id="aiFile" class="sr" accept="image/jpeg,image/png,image/webp">
+          <span class="food-note" id="aiFileName">還沒選照片</span>
+        </div>
+        <img id="aiPreview" class="ai-preview" alt="要分析的餐點照片" hidden>
+        <label class="sr" for="aiNote">補充說明</label>
+        <input type="text" id="aiNote" maxlength="80" autocomplete="off" placeholder="補充說明（選填）：例如 白飯只吃半碗、雞腿有去皮">
+        <div class="ai-row">
+          <button class="btn primary" id="aiGo" type="button" disabled>分析這餐</button>
+          <button class="btn ghost" id="aiStop" type="button" hidden>停止</button>
+          <span class="food-note" id="aiStatus"></span>
+        </div>
+        <div class="ai-result" id="aiResult" hidden>
+          <ul class="ai-foods" id="aiFoods"></ul>
+          <p class="ai-total" id="aiTotal"></p>
+          <ul class="ai-advice" id="aiAdvice"></ul>
+          <div class="ai-row">
+            <button class="btn primary" id="aiSave" type="button">記錄勾選的食物</button>
+            <button class="btn" id="aiCode" type="button" hidden>📋 複製進度碼（貼到 GitHub 網站）</button>
+          </div>
+          <p class="food-note">AI 是看照片估計，份量可能有三成左右的誤差，當作參考就好。</p>
+        </div>
+      </div>
+    </div>
+    <details class="food-more">
+      <summary>＋ 自己輸入食物</summary>
+      <form class="food-form" id="foodForm">
+        <label class="sr" for="foodName">食物名稱</label>
+        <input type="text" id="foodName" maxlength="30" autocomplete="off" placeholder="例如：滷雞腿">
+        <label class="sr" for="foodGram">蛋白質公克</label>
+        <input type="number" id="foodGram" min="0" max="200" step="1" inputmode="numeric" placeholder="蛋白質 g">
+        <label class="food-check"><input type="checkbox" id="foodKeep"> 存成常用按鈕</label>
+        <button class="btn" type="submit">記錄</button>
+      </form>
+      <p class="food-note">不知道蛋白質多少？看包裝的「營養標示」，或用：肉類每 100 g 約 20–25 g、一顆蛋約 7 g。</p>
+    </details>
+    <ul class="food-log" id="foodLog"></ul>
+    <div class="ai-row" id="foodComboRow"></div>
+    <div>
+      <p class="label">近 7 天蛋白質（點長條看那天）</p>
+      <div class="fweek" id="foodWeek"></div>
+    </div>
+  </section>
+  </section>
+
+  <!-- ⚙️ 更多 -->
+  <section class="tab" data-tab="more" id="tab-more" hidden>
+    <h2 class="tab-title">⚙️ 更多</h2>
+    <section class="panel more-pt">
+      <div><h3>🧭 英文程度測驗</h3><p class="food-note">約 8–10 分鐘，測完會估算 CEFR 等級。建議每個月底測一次，看看進步多少。</p></div>
+      <button class="btn" type="button" id="ptOpenMore">開始程度測驗</button>
+    </section>
+    <section class="panel food" aria-labelledby="moreFoodTitle">
+      <h3 id="moreFoodTitle">🍱 蛋白質目標與一鍵組合</h3>
+    <details class="food-more" id="foodSetBox">
+      <summary>目標設定</summary>
+      <form class="food-form" id="foodSetForm">
+        <label class="field"><span>體重（kg）</span><input type="number" id="foodW" min="25" max="250" step="0.1" inputmode="decimal"></label>
+        <label class="field"><span>有運動的日子（每公斤）</span>
+          <select id="foodF">
+            <option value="1">1.0 g</option>
+            <option value="1.2">1.2 g（一般維持）</option>
+            <option value="1.6">1.6 g（增肌建議）</option>
+            <option value="1.8">1.8 g</option>
+            <option value="2">2.0 g（訓練量大）</option>
+          </select></label>
+        <label class="field"><span>沒運動的日子（每公斤）</span>
+          <select id="foodFr">
+            <option value="1">1.0 g</option>
+            <option value="1.2">1.2 g（建議）</option>
+            <option value="1.6">1.6 g</option>
+            <option value="1.8">1.8 g</option>
+            <option value="2">2.0 g</option>
+          </select></label>
+        <button class="btn" type="submit">儲存</button>
+      </form>
+      <p class="food-note" id="foodSetNote"></p>
+      <p class="food-note">一鍵組合（按 ✕ 移除；在紀錄下方按「💾 存成一鍵組合」可以新增或更新）：</p>
+      <ul class="food-log" id="foodComboList"></ul>
+      <ul class="food-log" id="foodCustomList"></ul>
+    </details>
+    </section>
   <footer class="panel export">
     <div class="export-head">
       <div>
@@ -703,7 +755,6 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     <label class="sr" for="summaryOut">學習摘要內容</label>
     <textarea id="summaryOut" readonly hidden></textarea>
   </footer>
-
   <section class="panel export" aria-labelledby="syncTitle">
     <div class="export-head">
       <div>
@@ -755,9 +806,25 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       </div>
     </div>
   </section>
-  </div>
+      <section class="panel tips">
+        <h3>使用方式</h3>
+        <ul>
+          <li>每天 4 個單字：先聽、再慢速跟讀、最後開麥克風挑戰。</li>
+          <li>90 分以上 Awesome、70–89 分 Good job、70 分以下 Try again。</li>
+          <li>鍵盤 <kbd>←</kbd> <kbd>→</kbd> 切換卡片。</li>
+          <li>進度自動存在這台電腦的瀏覽器裡。</li>
+          <li>學習時間只在網頁開著、有操作時累計，閒置超過 1 分鐘會暫停。</li>
+        </ul>
+      </section>
   <p class="env-note" id="envNote"></p>
+  </section>
 </div>
+<nav class="tabbar" aria-label="分頁">
+  <button type="button" data-tab-btn="today"><span aria-hidden="true">🏠</span>今天</button>
+  <button type="button" data-tab-btn="english"><span aria-hidden="true">📖</span>英文</button>
+  <button type="button" data-tab-btn="food"><span aria-hidden="true">🍱</span>飲食</button>
+  <button type="button" data-tab-btn="more"><span aria-hidden="true">⚙️</span>更多</button>
+</nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -1498,6 +1565,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     const db = $("doneBtn");
     db.classList.toggle("is-on", !!S.done[S.day]);
     db.textContent = S.done[S.day] ? "✅ Day " + S.day + " 已完成" : "☐ 標記 Day " + S.day + " 完成";
+    renderToday();
   }
   function renderHardBtn() {
     const on = !!S.hard[curKey()];
@@ -1717,6 +1785,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   document.addEventListener("keydown", (e) => {
     if (e.target.closest("input, textarea, select")) return;
     if (!$("testView").hidden) return;
+    if (curTab !== "english") return;   // ← → 只在英文分頁切換卡片
     if (e.key === "ArrowRight") step(1);
     else if (e.key === "ArrowLeft") step(-1);
   });
@@ -2070,6 +2139,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     }
     if (timeDirty && now - lastFlush > 30000) flushTime();
     renderTimeTile();
+    if (curTab === "today" && active) renderToday();   // 今天分頁的「今天學習」時間跟著更新
   }
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") flushTime(); else tickLast = Date.now();
@@ -2167,8 +2237,8 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   }
   function openFoodFor(date, meal) {
     foodDay = date; foodMeal = meal; foodFollowToday = date === today();
+    showTab("food");
     renderFood();
-    $("foodPanel").scrollIntoView({ behavior: "smooth", block: "start" });
   }
   // 下班打卡裡的「三餐記了嗎」：沒記的餐列出一鍵補記；三餐都記好就摺成一行
   function renderMealCheck() {
@@ -2424,6 +2494,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       li.appendChild(rm);
       cl.appendChild(li);
     });
+    renderToday();
   }
 
   $("foodPrev").addEventListener("click", () => { foodDay = shiftDay(foodDay, -1); foodFollowToday = false; renderFood(); });
@@ -2485,7 +2556,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     a.textContent = "打開 Artifact 頁面拍照分析 →";
     off.appendChild(document.createElement("br"));
     off.appendChild(a);
-    off.appendChild(document.createTextNode(" 在那裡記錄後，按「📋 複製進度碼」，再回到這裡用「匯入進度碼 → 合併匯入」。"));
+    off.appendChild(document.createTextNode(" 在那裡記錄後，按「📋 複製進度碼」，再到這裡「⚙️ 更多」分頁的「匯入進度碼 → 合併匯入」。"));
   }
   function aiInit() {
     if (!window.claude || typeof window.claude.use !== "function") { aiShowOff(); return; }
@@ -2601,9 +2672,41 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     const code = encodeCode(S);
     const done = () => toast("已複製進度碼。到 GitHub 網站按「匯入進度碼」→「合併匯入」");
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(code).then(done, () => { $("codeExport").click(); toast("請到頁面最下方複製進度碼"); });
-    } else { $("codeExport").click(); toast("請到頁面最下方複製進度碼"); }
+      navigator.clipboard.writeText(code).then(done, () => { showTab("more"); $("codeExport").click(); toast("請在「更多」分頁複製進度碼"); });
+    } else { showTab("more"); $("codeExport").click(); toast("請在「更多」分頁複製進度碼"); }
   });
+
+  /* ---------- 分頁：今天／英文／飲食／更多 ---------- */
+  const TAB_KEY = "eng30-tab", TABS = ["today", "english", "food", "more"];
+  let curTab = "today";
+  function showTab(name) {
+    if (TABS.indexOf(name) < 0) name = "today";
+    curTab = name;
+    document.querySelectorAll("[data-tab]").forEach((s) => { s.hidden = s.dataset.tab !== name; });
+    document.querySelectorAll("[data-tab-btn]").forEach((b) => {
+      if (b.dataset.tabBtn === name) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+    });
+    try { localStorage.setItem(TAB_KEY, name); } catch (e) {}   // 只是記住這台裝置上次停在哪個分頁
+    if (name !== "english") { stopSpeech(); if (listening && rec) rec.abort(); }
+    if (name === "today") renderToday();
+    window.scrollTo(0, 0);
+  }
+  // 「今天」分頁的摘要：蛋白質進度＋英文進度
+  function renderToday() {
+    const d = today(), sum = foodTotal(d), tg = foodTargetOn(d);
+    $("tsumFood").textContent = sum + " / " + tg + " g";
+    $("tsumFoodFill").style.width = Math.min(100, tg ? Math.round(sum / tg * 100) : 0) + "%";
+    const n = DAYS[S.day - 1].w.length;
+    let practiced = 0;
+    for (let i = 0; i < n; i++) if (own(S.scores, keyOf(S.day, i))) practiced++;
+    $("tsumEng").textContent = "Day " + S.day + (S.done[S.day] ? " 已完成 ✓" : "・已跟讀 " + practiced + "/" + n) + "・今天學習 " + fmtDur(secOn(d));
+  }
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-tab-btn], [data-go]");
+    if (!t) return;
+    showTab(t.dataset.tabBtn || t.dataset.go);
+  });
+  $("ptOpenMore").addEventListener("click", () => { showTab("english"); startTest(); });
 
   /* ---------- 同步後重新整理畫面 ---------- */
   let habitRedraw = null;   // 下班打卡模組載入後設定；同步或匯入換掉 S 時重畫打卡
@@ -2935,6 +3038,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       saveH(id, "why." + k);
     }
     const whyOpen = new Set();   // 使用者按「修改」重新展開的格子（日期|習慣）
+    let whyPanelOpen = false;    // 「記一下原因」整塊是否展開（預設收起）
     // 摺疊後把鍵盤焦點留在那一格的「修改」按鈕上
     const focusWhy = (key) => { const b = [...$("habitWhy").querySelectorAll("[data-why]")].find((x) => x.dataset.why === key); if (b) b.focus(); };
     function renderWhy() {
@@ -2947,10 +3051,26 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       const keyOfWhy = (k) => id + "|" + k;
       const isFilled = (k) => { const w = whyOf(id, k); return !!(w.r || w.n); };
       const allDone = miss.every((t) => isFilled(t.k) && !whyOpen.has(keyOfWhy(t.k)));
-      const title = document.createElement("p");
-      title.className = "hwhy-title";
-      title.textContent = allDone ? "沒做的原因都記下了：" :
-        kOf(sel) === kOf(TODAY) ? "還沒打勾的格子，沒做成的話記一下原因：" : "這天沒打勾的格子，補記原因：";
+      const unfilled = miss.filter((t) => !isFilled(t.k)).length;
+      // 預設收成一行，要記的時候才展開（不然三格全攤開會讓「今天」頁很長）
+      if (!allDone && !whyPanelOpen) {
+        const open = el("button", "btn small ghost why-toggle", "📝 沒做成的話，記一下原因（" + unfilled + " 格）▸");
+        open.type = "button";
+        open.setAttribute("aria-expanded", "false");
+        open.addEventListener("click", () => { whyPanelOpen = true; draw(); const f = $("habitWhy").querySelector(".wchip"); if (f) f.focus(); });
+        box.appendChild(open);
+        return;
+      }
+      const title = el("div", "why-head");
+      title.appendChild(el("p", "hwhy-title", allDone ? "沒做的原因都記下了：" :
+        kOf(sel) === kOf(TODAY) ? "還沒打勾的格子，沒做成的話記一下原因：" : "這天沒打勾的格子，補記原因："));
+      if (!allDone) {
+        const close = el("button", "btn small ghost", "收起 ▴");
+        close.type = "button";
+        close.setAttribute("aria-expanded", "true");
+        close.addEventListener("click", () => { whyPanelOpen = false; draw(); });
+        title.appendChild(close);
+      }
       box.appendChild(title);
       miss.forEach((t) => {
         const cur = whyOf(id, t.k), key = keyOfWhy(t.k);
@@ -3158,6 +3278,13 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   renderAll();
   renderFood();
   aiInit();
+  // 開啟時：網址 #today 等指定分頁 > 這台裝置上次的分頁 > 今天
+  (function () {
+    const h = location.hash.replace("#", "");
+    let saved = "";
+    try { saved = localStorage.getItem(TAB_KEY) || ""; } catch (e) {}
+    showTab(TABS.indexOf(h) >= 0 ? h : (TABS.indexOf(saved) >= 0 ? saved : "today"));
+  })();
   renderSyncUI();
   setInterval(tick, 1000);
   if (connected()) syncNow({ announce: true });
