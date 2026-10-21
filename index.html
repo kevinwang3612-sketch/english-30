@@ -3012,9 +3012,30 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       const box = $("habitWork");
       box.innerHTML = "";
       if (!showPlan) return;
-      const plan = WORKOUT[sel.getDay()];
+      const dayWord = kOf(sel) === kOf(TODAY) ? "今天" : "這天";
+      // 往回找 3 天內最近一次排了肌力訓練的日子：照課表要做（mode on）卻沒勾「運動」就算沒做到
+      let missed = null;
+      for (let i = 1; i <= 3; i++) {
+        const d = add(sel, -i);
+        if (!WORKOUT[d.getDay()]) continue;
+        if (mode(d) === "on" && !val(d, "ex")) missed = d;
+        break;
+      }
+      let plan = WORKOUT[sel.getDay()], title, note = "";
+      if (plan) {
+        title = "💪 " + dayWord + "的運動菜單：" + plan.t;
+        // 本來就有排課：不疊兩堂，照常做就好
+        if (missed) note = "週" + WD[missed.getDay()] + "的" + WORKOUT[missed.getDay()].t.split("・")[0] + "沒做到沒關係，" + dayWord + "照常做這堂就好，不用一次補兩堂。";
+      } else if (missed) {
+        // 本來是休息日：把沒做到的那堂順延過來
+        plan = WORKOUT[missed.getDay()];
+        title = "🔁 補做週" + WD[missed.getDay()] + "的" + plan.t;
+      } else {
+        title = "🧘 " + dayWord + "選做：睡前伸展放鬆";
+      }
       const list = plan ? plan.v : [STRETCH];
-      box.appendChild(el("p", "hwork-t", plan ? "💪 今天的運動菜單：" + plan.t : "🧘 今天選做：睡前伸展放鬆"));
+      box.appendChild(el("p", "hwork-t", title));
+      if (note) box.appendChild(el("p", "", note));
       list.forEach((v) => {
         const a = document.createElement("a");
         a.href = YT + v[0]; a.target = "_blank"; a.rel = "noopener noreferrer";
@@ -3022,7 +3043,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
         a.appendChild(el("span", "min", v[2] + " 分"));
         box.appendChild(a);
       });
-      box.appendChild(el("p", "", plan ? "很累的話只做暖身 5 分鐘也算完成。做完記得在上面勾「運動」，今天的蛋白質目標會提高到 " + foodTarget() + " g。" : "伸展不算肌力訓練，蛋白質目標維持休息日的量就好。"));
+      box.appendChild(el("p", "", plan ? "很累的話只做暖身 5 分鐘也算完成。做完記得在上面勾「運動」，" + dayWord + "的蛋白質目標會提高到 " + foodTarget() + " g。" : "伸展不算肌力訓練，蛋白質目標維持休息日的量就好。"));
     }
 
     const REASONS = ["太累", "加班", "煮飯太晚", "身體不適", "下雨", "臨時有事", "忘記了"];
