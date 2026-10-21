@@ -405,6 +405,19 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 .fbar-area { position: relative; }
 .ftick { position: absolute; left: 14%; right: 14%; border-top: 2px dashed var(--muted); pointer-events: none; }
 
+/* ---- 三餐檢查（下班打卡裡） ---- */
+.hmeals { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; border-left: 6px solid var(--accent); }
+.hmeals:empty { display: none; }
+.hmeals-t { font-size: 14px; font-weight: 700; }
+.hmeal-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.hmeal-row > b { font-size: 14px; min-width: 2.6em; }
+.hmeal-row .fchips { flex: 1 1 220px; }
+.hmeal-ok { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.fchip.hmeal-skip { color: var(--muted); }
+.hmeals-done { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 14px; }
+.hmeals-done span { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.fchip-combo { border-color: var(--accent); }
+
 /* ---- AI 拍照估營養 ---- */
 .ai-box { background: var(--surface-2); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
 .ai-on { display: flex; flex-direction: column; gap: 10px; }
@@ -467,6 +480,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     <div class="todo-head" id="habitTodoHead"></div>
     <div class="habit-tasks" id="habitTasks"></div>
     <div class="hwork" id="habitWork"></div>
+    <div class="hmeals" id="habitMeals"></div>
     <div class="habit-extras" id="habitExtras"></div>
     <div class="hwhy" id="habitWhy"></div>
     <div class="hweek" id="habitWeek" aria-label="本週"></div>
@@ -535,6 +549,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       <p class="food-note">不知道蛋白質多少？看包裝的「營養標示」，或用：肉類每 100 g 約 20–25 g、一顆蛋約 7 g。</p>
     </details>
     <ul class="food-log" id="foodLog"></ul>
+    <div class="ai-row" id="foodComboRow"></div>
     <div>
       <p class="label">近 7 天蛋白質（點長條看那天）</p>
       <div class="fweek" id="foodWeek"></div>
@@ -562,6 +577,8 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
         <button class="btn" type="submit">儲存</button>
       </form>
       <p class="food-note" id="foodSetNote"></p>
+      <p class="food-note">一鍵組合（按 ✕ 移除；在紀錄下方按「💾 存成一鍵組合」可以新增或更新）：</p>
+      <ul class="food-log" id="foodComboList"></ul>
       <ul class="food-log" id="foodCustomList"></ul>
     </details>
   </section>
@@ -1033,6 +1050,16 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     o.custom = (Array.isArray(v.custom) ? v.custom : []).slice(0, 12)
       .filter((c) => c && typeof c === "object" && FOOD_ID_RE.test(c.id))
       .map((c) => ({ id: c.id, n: cStr(c.n, 30) || "食物", p: Math.max(0, Math.min(200, Math.round(cNum(c.p)))) }));
+    // 一鍵組合：[{ id, n: 名稱, m: 餐別, items: [{ k, n, p }] }]；cx = 使用者改過組合（否則用內建的平常早餐／午餐）
+    o.cx = v.cx ? 1 : 0;
+    o.combos = (Array.isArray(v.combos) ? v.combos : []).slice(0, 8)
+      .filter((c) => c && typeof c === "object" && FOOD_ID_RE.test(c.id))
+      .map((c) => ({
+        id: c.id, n: cStr(c.n, 20) || "常吃組合", m: /^[blds]$/.test(c.m) ? c.m : "s",
+        items: (Array.isArray(c.items) ? c.items : []).slice(0, 12).map(cleanFoodEntry).filter(Boolean)
+          .map((e) => ({ k: e.k, n: e.n, p: e.p }))
+      }))
+      .filter((c) => c.items.length);
     return o;
   }
   function cleanState(s) {
@@ -2082,7 +2109,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       if (!t) return;
       days++; sum += t;
       if (t >= tg) hit++; else if (t >= tg * 0.8) near++;
-      foodEntries(d).forEach((e) => { names[e.n] = (names[e.n] || 0) + 1; });
+      foodEntries(d).forEach((e) => { if (e.k !== "skip") names[e.n] = (names[e.n] || 0) + 1; });
     });
     const top = Object.keys(names).sort((x, y) => names[y] - names[x]).slice(0, 5).map((n) => n + " ×" + names[n]);
     return { target: foodTarget(), rest: foodTargetRest(), w: foodW(), f: foodF(), fr: foodFr(), days: days, avg: days ? Math.round(sum / days) : 0, hit: hit, near: near, top: top };
@@ -2090,6 +2117,117 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   function defaultMeal() { const d = new Date(), h = d.getHours() + d.getMinutes() / 60; return h < 10.5 ? "b" : h < 15 ? "l" : h < 21 ? "d" : "s"; }
   function shiftDay(s, n) { const p = s.split("-").map(Number); return ymd(new Date(p[0], p[1] - 1, p[2] + n)); }
   let foodDay = today(), foodMeal = defaultMeal(), foodFollowToday = true;
+  let mealCheckDate = today();   // 下班打卡「三餐記了嗎」看的日期，跟著打卡選的那天
+
+  /* ---- 一鍵組合與三餐檢查：常常忘記記錄，所以晚上打卡時一次補齊 ---- */
+  const DEFAULT_COMBOS = [
+    { id: "dbreakfast", n: "平常早餐", m: "b", items: [{ k: "egg", n: "水煮蛋 1 顆", p: 7 }, { k: "egg", n: "水煮蛋 1 顆", p: 7 }, { k: "sweetpotato", n: "地瓜 1 條", p: 2 }, { k: "milk", n: "牛奶 1 杯", p: 8 }] },
+    { id: "dlunchbox", n: "平常午餐便當", m: "l", items: [{ k: "rice", n: "白飯 1 碗", p: 5 }, { k: "tuna", n: "鮪魚罐頭 1 罐", p: 22 }, { k: "veg", n: "燙青菜 1 份", p: 2 }, { k: "yogurtcup", n: "優格 1 杯", p: 5 }] }
+  ];
+  const CHECK_MEALS = ["b", "l", "d"];
+  function combosList() { return S.fset.cx ? S.fset.combos : DEFAULT_COMBOS; }
+  const comboSum = (c) => c.items.reduce((a, e) => a + e.p, 0);
+  function newFoodId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  // 一次記好多樣：只存檔、重畫一次
+  function logItems(date, meal, items, msg) {
+    if (!items.length) return;
+    const day = own(S.food, date) ? S.food[date] : (S.food[date] = {});
+    items.forEach((it) => { day[newFoodId()] = { k: it.k || "", n: it.n, p: it.p, m: meal, ts: Date.now() }; });
+    save(); renderFood();
+    if (msg) toast(msg);
+  }
+  function mealEntries(date, meal) { return foodEntries(date).filter((e) => e.m === meal); }
+  function mealState(date, meal) {
+    const es = mealEntries(date, meal);
+    if (!es.length) return { logged: false, skip: false, p: 0 };
+    return { logged: true, skip: es.every((e) => e.k === "skip"), p: es.reduce((a, e) => a + e.p, 0) };
+  }
+  function yesterdayItems(date, meal) {
+    return mealEntries(shiftDay(date, -1), meal).filter((e) => e.k !== "skip").map((e) => ({ k: e.k, n: e.n, p: e.p }));
+  }
+  function skipMeal(date, meal) { logItems(date, meal, [{ k: "skip", n: "（這餐沒吃）", p: 0 }], MEAL_NAME[meal] + "標記為沒吃"); }
+  // 把某天某餐存成「平常＿＿」組合；同一餐已有組合就更新它
+  function saveCombo(date, meal) {
+    const items = mealEntries(date, meal).filter((e) => e.k !== "skip").map((e) => ({ k: e.k, n: e.n, p: e.p })).slice(0, 12);
+    if (!items.length) return;
+    const list = combosList().map((c) => ({ id: c.id, n: c.n, m: c.m, items: c.items.slice() }));
+    const name = "平常" + MEAL_NAME[meal];
+    const hit = list.find((c) => c.m === meal);
+    if (hit) { hit.items = items; hit.n = name; }
+    else if (list.length < 8) list.push({ id: newFoodId(), n: name, m: meal, items: items });
+    else { toast("一鍵組合最多 8 個，請先在「目標設定」移除一些"); return; }
+    S.fset.combos = list; S.fset.cx = 1; S.fset.ts = Date.now();
+    save(); renderFood();
+    toast("已存成「" + name + "」，共 " + items.length + " 樣、" + items.reduce((a, e) => a + e.p, 0) + " g");
+  }
+  function removeCombo(id) {
+    S.fset.combos = combosList().filter((c) => c.id !== id).map((c) => ({ id: c.id, n: c.n, m: c.m, items: c.items.slice() }));
+    S.fset.cx = 1; S.fset.ts = Date.now();
+    save(); renderFood();
+  }
+  function openFoodFor(date, meal) {
+    foodDay = date; foodMeal = meal; foodFollowToday = date === today();
+    renderFood();
+    $("foodPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  // 下班打卡裡的「三餐記了嗎」：沒記的餐列出一鍵補記；三餐都記好就摺成一行
+  function renderMealCheck() {
+    const box = $("habitMeals");
+    if (!box) return;
+    box.innerHTML = "";
+    const date = mealCheckDate;
+    if (date > today()) return;
+    const isToday = date === today();
+    const st = {};
+    CHECK_MEALS.forEach((m) => { st[m] = mealState(date, m); });
+    const summary = CHECK_MEALS.map((m) => MEAL_NAME[m] + " " + (st[m].skip ? "沒吃" : st[m].p + " g")).join("｜");
+    if (CHECK_MEALS.every((m) => st[m].logged)) {
+      const done = el("div", "hmeals-done");
+      done.appendChild(el("b", "", "🍽 三餐都記好了"));
+      done.appendChild(el("span", "", summary + "｜合計 " + foodTotal(date) + " / " + foodTargetOn(date) + " g"));
+      box.appendChild(done);
+      return;
+    }
+    box.appendChild(el("p", "hmeals-t", "🍽 " + (isToday ? "今天" : "這天") + "三餐記了嗎？沒記的點一下就補好"));
+    CHECK_MEALS.forEach((m) => {
+      const row = el("div", "hmeal-row");
+      row.appendChild(el("b", "", MEAL_NAME[m]));
+      if (st[m].logged) {
+        row.appendChild(el("span", "hmeal-ok", st[m].skip ? "✓ 沒吃" : "✓ " + st[m].p + " g"));
+        box.appendChild(row);
+        return;
+      }
+      const acts = el("div", "fchips");
+      combosList().filter((c) => c.m === m).forEach((c) => {
+        const b = el("button", "fchip");
+        b.type = "button";
+        b.appendChild(document.createTextNode(c.n));
+        b.appendChild(el("i", "", "＋" + comboSum(c)));
+        b.addEventListener("click", () => logItems(date, m, c.items, "已記錄" + c.n + "，＋" + comboSum(c) + " g"));
+        acts.appendChild(b);
+      });
+      const y = yesterdayItems(date, m);
+      if (y.length) {
+        const b = el("button", "fchip");
+        b.type = "button";
+        b.appendChild(document.createTextNode("跟昨天一樣"));
+        b.appendChild(el("i", "", "＋" + y.reduce((a, e) => a + e.p, 0)));
+        b.title = y.map((e) => e.n).join("、");
+        b.addEventListener("click", () => logItems(date, m, y, MEAL_NAME[m] + "跟昨天一樣，已記錄"));
+        acts.appendChild(b);
+      }
+      const own_ = el("button", "fchip", "自己點選");
+      own_.type = "button";
+      own_.addEventListener("click", () => openFoodFor(date, m));
+      acts.appendChild(own_);
+      const sk = el("button", "fchip hmeal-skip", "沒吃");
+      sk.type = "button";
+      sk.addEventListener("click", () => skipMeal(date, m));
+      acts.appendChild(sk);
+      row.appendChild(acts);
+      box.appendChild(row);
+    });
+  }
 
   // 還差多少時，從便利商店就買得到的品項挑最接近的一樣（或兩樣）
   function foodSuggest(left) {
@@ -2151,13 +2289,41 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 
     const seg = $("foodMeal"); seg.innerHTML = "";
     MEALS.forEach((m) => {
-      const b = el("button", "", m[1]);
+      const ms = mealState(date, m[0]);
+      const b = el("button", "", m[1] + (ms.logged ? " ✓" : ""));
       b.type = "button"; b.setAttribute("role", "radio"); b.setAttribute("aria-checked", foodMeal === m[0] ? "true" : "false");
+      b.setAttribute("aria-label", m[1] + (ms.logged ? "，已記錄" : "，還沒記錄"));
       b.addEventListener("click", () => { foodMeal = m[0]; renderFood(); });
       seg.appendChild(b);
     });
 
     const box = $("foodPresets"); box.innerHTML = "";
+    // ⚡ 一鍵記錄：常吃組合（記到組合自己的餐別）＋跟昨天的同一餐一樣
+    const quick = el("div", "fgroup");
+    quick.appendChild(el("p", "fgroup-t", "⚡ 一鍵記錄"));
+    const qchips = el("div", "fchips");
+    combosList().forEach((c) => {
+      const b = el("button", "fchip fchip-combo");
+      b.type = "button";
+      b.appendChild(document.createTextNode(c.n));
+      b.appendChild(el("i", "", "＋" + comboSum(c)));
+      b.title = c.items.map((e) => e.n).join("、");
+      b.setAttribute("aria-label", "一鍵記錄" + c.n + "到" + MEAL_NAME[c.m] + "：" + b.title + "，蛋白質 " + comboSum(c) + " 公克");
+      b.addEventListener("click", () => logItems(date, c.m, c.items, "已記錄" + c.n + "到" + MEAL_NAME[c.m] + "，＋" + comboSum(c) + " g"));
+      qchips.appendChild(b);
+    });
+    const yItems = yesterdayItems(date, foodMeal);
+    if (yItems.length) {
+      const b = el("button", "fchip fchip-combo");
+      b.type = "button";
+      b.appendChild(document.createTextNode("跟昨天的" + MEAL_NAME[foodMeal] + "一樣"));
+      b.appendChild(el("i", "", "＋" + yItems.reduce((a, e) => a + e.p, 0)));
+      b.title = yItems.map((e) => e.n).join("、");
+      b.addEventListener("click", () => logItems(date, foodMeal, yItems, MEAL_NAME[foodMeal] + "跟昨天一樣，已記錄"));
+      qchips.appendChild(b);
+    }
+    quick.appendChild(qchips);
+    box.appendChild(quick);
     const groups = FOODS.slice();
     if (S.fset.custom.length) groups.push({ g: "我的常用", items: S.fset.custom.map((c) => ["", c.n, c.p]) });
     groups.forEach((g) => {
@@ -2189,6 +2355,15 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       li.appendChild(rm);
       log.appendChild(li);
     });
+    // 把這天選中的那一餐存成一鍵組合
+    const comboRow = $("foodComboRow"); comboRow.innerHTML = "";
+    if (mealEntries(date, foodMeal).some((e) => e.k !== "skip")) {
+      const b = el("button", "btn small", "💾 把這天的" + MEAL_NAME[foodMeal] + "存成「平常" + MEAL_NAME[foodMeal] + "」一鍵組合");
+      b.type = "button";
+      b.addEventListener("click", () => saveCombo(date, foodMeal));
+      comboRow.appendChild(b);
+    }
+    renderMealCheck();
 
     // 近 7 天長條：長條和每天的目標刻度用同一個尺度；達標實心，未達標淺色。每天目標依有沒有運動而不同
     const wk = $("foodWeek"); wk.innerHTML = "";
@@ -2223,6 +2398,18 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     if (document.activeElement !== frIn) frIn.value = String(foodFr());
     $("foodSetNote").textContent = "目前目標：有運動的日子 " + foodTarget() + " g，沒運動的日子 " + foodTargetRest() + " g（" + foodW() + " kg × 每公斤 " + foodF() + "／" + foodFr() + " g）。" +
       "在「下班打卡」勾了「運動」，那天就自動用運動日的目標。" + (S.fset.custom.length ? "下面是你存的常用按鈕，按 ✕ 可以移除：" : "");
+    const cbl = $("foodComboList"); cbl.innerHTML = "";
+    combosList().forEach((c) => {
+      const li = el("li");
+      li.appendChild(el("span", "mt", MEAL_NAME[c.m]));
+      li.appendChild(el("span", "fn", c.n + "：" + c.items.map((e) => e.n).join("、")));
+      li.appendChild(el("span", "fp", comboSum(c) + " g"));
+      const rm = el("button", "rm", "✕");
+      rm.type = "button"; rm.setAttribute("aria-label", "移除一鍵組合 " + c.n);
+      rm.addEventListener("click", () => removeCombo(c.id));
+      li.appendChild(rm);
+      cbl.appendChild(li);
+    });
     const cl = $("foodCustomList"); cl.innerHTML = "";
     S.fset.custom.forEach((c) => {
       const li = el("li");
@@ -2941,7 +3128,8 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       renderWorkout(showPlan);
       renderWhy();
       renderStats();
-      renderFood();   // 勾或取消「運動」會改變當天的蛋白質目標
+      mealCheckDate = kOf(sel);   // 「三餐記了嗎」跟著打卡選的那天
+      renderFood();   // 勾或取消「運動」會改變當天的蛋白質目標；也會重畫三餐檢查
       const det = $("habitDetails");
       if (showPlan) {
         det.hidden = false;
