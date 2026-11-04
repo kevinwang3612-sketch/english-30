@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0e7c6b">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="每日打卡">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <title>30 天英語跟讀卡</title>
 <style>
 /* Layout: gradient ground → header with stats → day picker → study card (left) + notebook (right) → export footer */
@@ -436,6 +442,42 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 .more-pt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
 .more-pt > div { flex: 1 1 260px; min-width: 0; }
 
+/* ---- ⚡ 10 秒打卡 ---- */
+.quick { display: flex; flex-direction: column; gap: 12px; border: 2px solid var(--accent); }
+.quick-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.quick-head h2 { font-size: 20px; font-weight: 800; }
+.quick-head p { color: var(--muted); font-size: 13px; }
+.quick-tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+.qtask {
+  font: inherit; font-size: 17px; font-weight: 700; color: var(--ink); cursor: pointer;
+  min-height: 76px; border-radius: 16px; border: 2px solid var(--c); background: var(--surface);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  transition: background-color .15s ease, transform .12s ease;
+}
+.qtask .qi { font-size: 20px; line-height: 1.2; color: var(--c); }
+.qtask.ex { --c: var(--h-ex); } .qtask.soak { --c: var(--h-soak); } .qtask.eng { --c: var(--h-eng); }
+.qtask[aria-checked="true"] { background: var(--c); color: #fff; }
+.qtask[aria-checked="true"] .qi { color: #fff; }
+.qtask:hover { transform: translateY(-1px); }
+.qtask:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.quick-block { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.quick-block:empty { display: none; }
+.quick-line { font-size: 14px; font-variant-numeric: tabular-nums; flex: 1 1 220px; min-width: 0; }
+.quick-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.full-today > summary {
+  cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted);
+  padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+}
+.full-today > summary:hover { color: var(--ink); border-color: var(--accent); }
+.full-today[open] > summary { margin-bottom: 16px; }
+.full-today-body { display: flex; flex-direction: column; gap: 16px; }
+/* 🎯 目標開關 */
+.goal-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.goal-item { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 12px; border-radius: 12px; background: var(--surface-2); cursor: pointer; }
+.goal-item input { width: 20px; height: 20px; flex: none; accent-color: var(--accent); }
+.goal-tx { display: flex; flex-direction: column; min-width: 0; }
+.goal-tx small { color: var(--muted); font-size: 12px; }
+
 /* ---- 三餐檢查（下班打卡裡） ---- */
 .hmeals { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; border-left: 6px solid var(--accent); }
 .hmeals:empty { display: none; }
@@ -482,14 +524,30 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 <div class="app">
   <!-- 🏠 今天 -->
   <section class="tab" data-tab="today" id="tab-today">
+    <section class="panel quick" id="quickCard" aria-labelledby="quickTitle">
+      <div class="quick-head">
+        <div>
+          <h2 id="quickTitle">⚡ 10 秒打卡</h2>
+          <p id="quickDate"></p>
+        </div>
+        <div class="habit-streak"><b id="quickStreak">0</b><span>天連續有做</span></div>
+      </div>
+      <div class="quick-tasks" id="quickTasks"></div>
+      <div class="quick-block" id="quickMeals"></div>
+      <div class="quick-block" id="quickEng"></div>
+      <div class="quick-block" id="quickRest"></div>
+    </section>
+    <details class="full-today" id="fullToday">
+    <summary>看完整內容（運動菜單、三餐細節、週曆、原因）</summary>
+    <div class="full-today-body">
     <section class="panel today-sum" aria-label="今天的進度">
-      <div class="tsum-row">
+      <div class="tsum-row" id="tsumFoodRow">
         <span class="tsum-k">🥚 蛋白質</span>
         <div class="fmeter tsum-meter" aria-hidden="true"><div class="fmeter-fill" id="tsumFoodFill"></div></div>
         <span class="tsum-v" id="tsumFood">0 / 65 g</span>
         <button class="btn small" type="button" data-go="food">記錄</button>
       </div>
-      <div class="tsum-row">
+      <div class="tsum-row" id="tsumEngRow">
         <span class="tsum-k">📖 英文</span>
         <span class="tsum-v grow" id="tsumEng"></span>
         <button class="btn small primary" type="button" data-go="english">繼續練習</button>
@@ -516,6 +574,8 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     <details id="habitStats"><summary>原因小日誌（近 4 週）</summary><div id="habitStatsBody"></div></details>
     <button class="btn ghost small hreset" id="habitReset" type="button">清除打卡紀錄</button>
   </section>
+    </div>
+    </details>
   </section>
 
   <!-- 📖 英文 -->
@@ -702,6 +762,11 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   <!-- ⚙️ 更多 -->
   <section class="tab" data-tab="more" id="tab-more" hidden>
     <h2 class="tab-title">⚙️ 更多</h2>
+    <section class="panel goals" aria-labelledby="goalsTitle">
+      <h3 id="goalsTitle">🎯 現在要顧的目標</h3>
+      <p class="food-note">一次只顧少少幾個就好。關掉的目標不會出現在打卡畫面，也不算沒做到；資料都會保留，習慣了再一個一個打開。</p>
+      <div class="goal-list" id="goalList"></div>
+    </section>
     <section class="panel more-pt">
       <div><h3>🧭 英文程度測驗</h3><p class="food-note">約 8–10 分鐘，測完會估算 CEFR 等級。建議每個月底測一次，看看進步多少。</p></div>
       <button class="btn" type="button" id="ptOpenMore">開始程度測驗</button>
@@ -998,7 +1063,8 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   }
   // mod：記錄「完成天數／錯題本」每個勾選最後修改的時間，跨裝置合併時以較新者為準
   // resetAt：重設或完全取代的時間，比它舊的資料在合併時會被捨棄
-  function freshState() { return { day: 1, card: 0, done: {}, scores: {}, hard: {}, mod: {}, time: {}, habit: {}, hmod: {}, food: {}, fdel: {}, fset: {}, started: today(), updatedAt: 0, resetAt: 0 }; }
+  function freshState() { return { day: 1, card: 0, done: {}, scores: {}, hard: {}, mod: {}, time: {}, habit: {}, hmod: {}, food: {}, fdel: {}, fset: {}, goals: {}, started: today(), updatedAt: 0, resetAt: 0 }; }
+  // goals：現在要顧的目標 { soak, meals, eng, ex, ts }；關掉的不出現在打卡畫面、不算沒做到
   // habit：下班打卡 { "YYYY-MM-DD": { ex, soak, eng, mode, todo: {}, why: {} } }
   // hmod：打卡每個欄位最後修改的時間 { "日期|欄位": ms }，跨裝置合併時逐欄以較新者為準
   // time：{ 裝置ID: { "YYYY-MM-DD": 秒數 } }，按裝置分開記錄，合併時每個裝置每天取較大值，再把各裝置加總
@@ -1106,6 +1172,16 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     };
   }
   // 目標設定：{ w: 體重, f: 每公斤倍數, ts, custom: [{ id, n, p }] }
+  // 預設先只顧「泡腳＋三餐紀錄」，其他習慣了再打開
+  const GOAL_DEFAULT = { soak: true, meals: true, eng: false, ex: false };
+  function cleanGoals(v) {
+    const o = { ts: 0 };
+    const has = v && typeof v === "object" && cNum(v.ts) > 0;
+    Object.keys(GOAL_DEFAULT).forEach((k) => { o[k] = has ? !!v[k] : GOAL_DEFAULT[k]; });
+    o.ts = has ? cNum(v.ts) : 0;
+    return o;
+  }
+  function goalOn(k) { return !!(S.goals && S.goals[k]); }
   function cleanFoodSet(v) {
     const o = { w: 0, f: 0, ts: 0, custom: [] };
     if (!v || typeof v !== "object") return o;
@@ -1136,6 +1212,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     });
     s.fdel = cMap(s.fdel, FDEL_RE, cNum);
     s.fset = cleanFoodSet(s.fset);
+    s.goals = cleanGoals(s.goals);
     s.done = cMap(s.done, DAY_RE, (v) => (v ? (typeof v === "string" ? v.slice(0, 10) : today()) : undefined));
     s.scores = cMap(s.scores, CARD_RE, (v) => (v && typeof v === "object" ? {
       att: cNum(v.att), sum: cNum(v.sum), best: cNum(v.best), last: cNum(v.last),
@@ -1255,6 +1332,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     const out = mergeCore(a, b);
     out.habit = hm.habit; out.hmod = hm.hmod;
     out.food = fm.food; out.fdel = fm.fdel; out.fset = fm.fset;
+    out.goals = Object.assign({}, cNum(b.goals.ts) > cNum(a.goals.ts) ? b.goals : a.goals);   // 目標開關：以較晚改的為準
     out.hmigr = 1;
     return out;
   }
@@ -1774,7 +1852,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   $("resetBtn").addEventListener("click", () => { $("resetConfirm").hidden = false; });
   $("resetNo").addEventListener("click", () => { $("resetConfirm").hidden = true; });
   $("resetYes").addEventListener("click", () => {
-    const keep = { habit: S.habit, hmod: S.hmod, food: S.food, fdel: S.fdel, fset: S.fset };   // 重設跟讀進度不影響打卡與蛋白質紀錄
+    const keep = { habit: S.habit, hmod: S.hmod, food: S.food, fdel: S.fdel, fset: S.fset, goals: S.goals };   // 重設跟讀進度不影響打卡、蛋白質紀錄與目標開關
     S = Object.assign(freshState(), keep); S.resetAt = Date.now(); S.hmigr = 1; save();
     T = null; $("testView").hidden = true; $("studyView").hidden = false;
     $("resetConfirm").hidden = true;
@@ -2139,7 +2217,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     }
     if (timeDirty && now - lastFlush > 30000) flushTime();
     renderTimeTile();
-    if (curTab === "today" && active) renderToday();   // 今天分頁的「今天學習」時間跟著更新
+    if (curTab === "today" && active) renderToday(true);   // 今天分頁的「今天學習」時間跟著更新
   }
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") flushTime(); else tickLast = Date.now();
@@ -2245,6 +2323,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     const box = $("habitMeals");
     if (!box) return;
     box.innerHTML = "";
+    if (!goalOn("meals")) return;   // 目標關掉時不提醒
     const date = mealCheckDate;
     if (date > today()) return;
     const isToday = date === today();
@@ -2692,7 +2771,11 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     window.scrollTo(0, 0);
   }
   // 「今天」分頁的摘要：蛋白質進度＋英文進度
-  function renderToday() {
+  // light = 只更新數字（每秒計時用），不重畫 10 秒打卡卡片，避免按鈕一直重建
+  function renderToday(light) {
+    if (!light && quickRedraw) quickRedraw();
+    $("tsumFoodRow").hidden = !goalOn("meals");
+    $("tsumEngRow").hidden = !goalOn("eng");
     const d = today(), sum = foodTotal(d), tg = foodTargetOn(d);
     $("tsumFood").textContent = sum + " / " + tg + " g";
     $("tsumFoodFill").style.width = Math.min(100, tg ? Math.round(sum / tg * 100) : 0) + "%";
@@ -2708,14 +2791,56 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   });
   $("ptOpenMore").addEventListener("click", () => { showTab("english"); startTest(); });
 
+  /* ---------- 🎯 目標開關（在「更多」） ---------- */
+  const GOAL_LIST = [
+    ["soak", "🦶 泡腳", "放鬆類，可以邊泡腳邊聽英文"],
+    ["meals", "🍽 三餐紀錄與蛋白質", "晚上一鍵「三餐照平常」補記"],
+    ["eng", "📖 英文跟讀", "累的時候練 1 張也算"],
+    ["ex", "💪 運動", "週一三五的運動菜單，沒做會順延"]
+  ];
+  function renderGoals() {
+    const box = $("goalList");
+    if (!box) return;
+    box.innerHTML = "";
+    GOAL_LIST.forEach((g) => {
+      const lab = el("label", "goal-item"), cb = el("input");
+      cb.type = "checkbox"; cb.checked = goalOn(g[0]); cb.dataset.goal = g[0];
+      cb.addEventListener("change", () => {
+        S.goals = Object.assign({}, S.goals, { [g[0]]: cb.checked, ts: Date.now() });
+        save();
+        if (habitRedraw) habitRedraw();
+        renderFood(); renderGoals();
+        const again = $("goalList").querySelector('[data-goal="' + g[0] + '"]'); if (again) again.focus();
+        toast((cb.checked ? "已開啟：" : "先關掉：") + g[1].replace(/^\S+\s/, "") + (cb.checked ? "" : "（資料會保留）"));
+      });
+      const tx = el("span", "goal-tx");
+      tx.appendChild(el("b", "", g[1]));
+      tx.appendChild(el("small", "", g[2]));
+      lab.appendChild(cb); lab.appendChild(tx);
+      box.appendChild(lab);
+    });
+  }
+  // 「看完整內容」展開與否：只記在這台裝置
+  (function () {
+    const d = $("fullToday");
+    try { d.open = localStorage.getItem("eng30-full") === "1"; } catch (e) {}
+    d.addEventListener("toggle", () => { try { localStorage.setItem("eng30-full", d.open ? "1" : "0"); } catch (e) {} });
+  })();
+  // 加到主畫面後可以離線開啟：只在 GitHub 網站註冊（Artifact 頁面不適用）
+  if ("serviceWorker" in navigator && /\.github\.io$/.test(location.hostname)) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+
   /* ---------- 同步後重新整理畫面 ---------- */
   let habitRedraw = null;   // 下班打卡模組載入後設定；同步或匯入換掉 S 時重畫打卡
+  let quickRedraw = null;   // 10 秒打卡卡片的重畫函式（下班打卡模組設定）
   function applyState(next) {
     const before = JSON.stringify(S);
     S = normalizeState(next);
     writeLocal();
     if (habitRedraw) habitRedraw();
     renderFood();
+    renderGoals();
     if (JSON.stringify(S) === before) return false;
     if (listening || ptListening) { renderStats(); renderChips(); renderNotebook(); renderPlacementEntry(); }
     else renderAll();
@@ -2976,9 +3101,9 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       if (!cfg || !(isWk(sel) || mode(sel) === "on" || any(sel))) return;
       const id = kOf(sel);
       const todo = (H[id] && H[id].todo) || {};
-      const coreDone = TASKS.filter((t) => val(sel, t.k)).length;
+      const coreDone = activeTasks().filter((t) => val(sel, t.k)).length;
       const xDone = cfg.x.filter((e) => todo[e[0]]).length;
-      const total = TASKS.length + cfg.x.length, done = coreDone + xDone;
+      const total = activeTasks().length + cfg.x.length, done = coreDone + xDone;
       const isToday = id === kOf(TODAY);
       head.innerHTML = '<div class="row"><h4>' + (mode(sel) === "off" ? "選做（不計入連續天數）" : isToday ? "今天要完成" : "這天要完成") + '</h4><span class="todo-prog">' + done + " / " + total + (done === total ? " 全部完成" : "") + "</span></div>" +
         (mode(sel) === "on" ? '<p class="todo-order">順序：' + cfg.o + "</p>" + (cfg.tip ? '<p class="todo-order">' + cfg.tip + "</p>" : "") : "");
@@ -3066,7 +3191,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       const box = $("habitWhy");
       box.innerHTML = "";
       if (mode(sel) !== "on" || sel > TODAY) return;
-      const miss = TASKS.filter((t) => !val(sel, t.k));
+      const miss = activeTasks().filter((t) => !val(sel, t.k));
       if (!miss.length) return;
       const id = kOf(sel);
       const keyOfWhy = (k) => id + "|" + k;
@@ -3194,6 +3319,95 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       return n;
     }
 
+    // 只顯示「更多 → 現在要顧的目標」有開啟的習慣
+    const activeTasks = () => TASKS.filter((t) => goalOn(t.k));
+    function toggleTask(id, k) {
+      if (k === "eng" && engAuto(id) && !(H[id] && H[id].eng)) { toast("跟讀卡已標記完成，英文會自動算做完成"); return; }
+      H[id] = H[id] || {};
+      if (H[id][k]) delete H[id][k]; else H[id][k] = true;
+      if (!Object.keys(H[id]).length) delete H[id];
+      saveH(id, k); draw();
+    }
+    // 一鍵補記沒記的餐：有「平常○餐」組合就用組合，沒有就跟昨天一樣
+    function quickMeals(date, miss) {
+      const done = [], left = [];
+      miss.forEach((m) => {
+        const c = combosList().find((x) => x.m === m);
+        const items = c ? c.items : yesterdayItems(date, m);
+        if (items.length) { logItems(date, m, items); done.push(MEAL_NAME[m]); } else left.push(MEAL_NAME[m]);
+      });
+      toast((done.length ? "已記錄" + done.join("、") : "") +
+        (left.length ? (done.length ? "；" : "") + left.join("、") + "沒有平常的組合，可以按「自己記」" : ""));
+    }
+    // ⚡ 10 秒打卡：永遠看今天，只放開啟的目標、三餐照平常、今天累了休息
+    function renderQuick() {
+      const id = kOf(TODAY), md = mode(TODAY), def = defMode(TODAY), explicit = H[id] && H[id].mode;
+      $("quickDate").textContent = (TODAY.getMonth() + 1) + "月" + TODAY.getDate() + "日 週" + WD[TODAY.getDay()] + (md === "off" ? "・休息日（不計入）" : "");
+      $("quickStreak").textContent = streak();
+
+      const box = $("quickTasks"); box.innerHTML = "";
+      const act = activeTasks();
+      if (!act.length) box.appendChild(el("p", "food-note", "目前沒有開啟打卡目標，可以到「⚙️ 更多 → 現在要顧的目標」打開。"));
+      act.forEach((t) => {
+        const on = val(TODAY, t.k);
+        const b = el("button", "qtask " + t.k);
+        b.type = "button"; b.setAttribute("role", "checkbox"); b.setAttribute("aria-checked", on ? "true" : "false");
+        b.appendChild(el("span", "qi", on ? "✓" : "○"));
+        b.appendChild(el("span", "qn", t.n));
+        b.addEventListener("click", () => {
+          toggleTask(id, t.k);
+          const again = $("quickTasks").querySelector(".qtask." + t.k); if (again) again.focus();
+        });
+        box.appendChild(b);
+      });
+
+      const mb = $("quickMeals"); mb.innerHTML = "";
+      if (goalOn("meals")) {
+        const st = CHECK_MEALS.map((m) => [m, mealState(id, m)]);
+        mb.appendChild(el("p", "quick-line", "🍽 " + st.map((x) => MEAL_NAME[x[0]] + (x[1].logged ? (x[1].skip ? " 沒吃" : " ✓") : " —")).join("　") +
+          "　🥚 " + foodTotal(id) + " / " + foodTargetOn(id) + " g"));
+        const miss = st.filter((x) => !x[1].logged).map((x) => x[0]);
+        if (miss.length) {
+          const row = el("div", "quick-actions");
+          const b = el("button", "btn primary", "🍽 三餐照平常");
+          b.type = "button"; b.addEventListener("click", () => quickMeals(id, miss));
+          row.appendChild(b);
+          const o = el("button", "btn small ghost", "自己記");
+          o.type = "button"; o.addEventListener("click", () => openFoodFor(id, miss[0]));
+          row.appendChild(o);
+          mb.appendChild(row);
+        }
+      }
+
+      const eb = $("quickEng"); eb.innerHTML = "";
+      if (goalOn("eng")) {
+        const n = DAYS[S.day - 1].w.length;
+        let p = 0;
+        for (let i = 0; i < n; i++) if (own(S.scores, keyOf(S.day, i))) p++;
+        eb.appendChild(el("p", "quick-line", "📖 Day " + S.day + (S.done[S.day] ? " 已完成 ✓" : "・已跟讀 " + p + "/" + n + "（累的話 1 張也算）")));
+        const b = el("button", "btn small", "去練習");
+        b.type = "button"; b.addEventListener("click", () => showTab("english"));
+        eb.appendChild(b);
+      }
+
+      const rb = $("quickRest"); rb.innerHTML = "";
+      if (md === "off" && !explicit) {
+        rb.appendChild(el("p", "food-note", "今天本來就是休息日，不計入連續天數；想做的話一樣可以打勾。"));
+      } else {
+        const b = el("button", "btn small ghost", md === "off" ? "😴 已設為休息日・取消" : "😴 今天累了，休息");
+        b.type = "button";
+        b.addEventListener("click", () => {
+          const nxt = md === "on" ? "off" : "on";
+          H[id] = H[id] || {};
+          if (nxt === def) delete H[id].mode; else H[id].mode = nxt;
+          if (!Object.keys(H[id]).length) delete H[id];
+          saveH(id, "mode"); draw();
+          toast(nxt === "off" ? "好好休息 🌙 今天不計入，連續天數不會中斷" : "已取消休息日");
+        });
+        rb.appendChild(b);
+      }
+    }
+
     function draw() {
       H = S.habit;   // 同步或匯入後 S 可能換成新物件
       const w = sel.getDay(), plan = PLAN[w], isToday = kOf(sel) === kOf(TODAY);
@@ -3228,19 +3442,15 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       const tasks = $("habitTasks");
       tasks.innerHTML = "";
       if (showPlan) {
-        TASKS.forEach((t) => {
+        if (!activeTasks().length) tasks.innerHTML = '<p style="color:var(--muted);font-size:13px">目前沒有開啟打卡目標，可以到「⚙️ 更多 → 現在要顧的目標」打開。</p>';
+        activeTasks().forEach((t) => {
           const on = val(sel, t.k);
           const b = document.createElement("button");
           b.type = "button"; b.className = "htask " + t.k;
           b.setAttribute("role", "checkbox"); b.setAttribute("aria-checked", on ? "true" : "false");
           b.innerHTML = "<b>" + (on ? "✓ " : "") + t.n + "</b><small>" + plan[t.k] + "</small>";
           b.addEventListener("click", () => {
-            const id = kOf(sel);
-            if (t.k === "eng" && engAuto(id) && !(H[id] && H[id].eng)) { toast("跟讀卡已標記完成，英文會自動算做完成"); return; }
-            H[id] = H[id] || {};
-            if (H[id][t.k]) delete H[id][t.k]; else H[id][t.k] = true;
-            if (!Object.keys(H[id]).length) delete H[id];
-            saveH(id, t.k); draw();
+            toggleTask(kOf(sel), t.k);
             const again = tasks.querySelector(".htask." + t.k); if (again) again.focus();
           });
           tasks.appendChild(b);
@@ -3257,16 +3467,16 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
         const b = document.createElement("button");
         b.type = "button"; b.className = "hday" + (kOf(d) === kOf(TODAY) ? " istoday" : "") + (off ? " off" : "");
         b.setAttribute("aria-pressed", kOf(d) === kOf(sel) ? "true" : "false");
-        const n = TASKS.filter((t) => val(d, t.k)).length;
+        const n = activeTasks().filter((t) => val(d, t.k)).length;
         b.setAttribute("aria-label", "週" + WD[d.getDay()] + " " + (d.getMonth() + 1) + "月" + d.getDate() + "日，" + (off ? "不計入，" : "") + "已完成 " + n + " 項");
         b.innerHTML = '<span class="wd">' + WD[d.getDay()] + '</span><span class="dn">' + d.getDate() + '</span><span class="segs">' +
-          TASKS.map((t) => '<span class="seg ' + t.k + (val(d, t.k) ? " on" : "") + '"></span>').join("") + "</span>";
+          activeTasks().map((t) => '<span class="seg ' + t.k + (val(d, t.k) ? " on" : "") + '"></span>').join("") + "</span>";
         b.addEventListener("click", () => { sel = d; draw(); });
         wk.appendChild(b);
       }
 
       renderTodo();
-      renderWorkout(showPlan);
+      renderWorkout(showPlan && goalOn("ex"));   // 運動目標關掉時不顯示菜單
       renderWhy();
       renderStats();
       mealCheckDate = kOf(sel);   // 「三餐記了嗎」跟著打卡選的那天
@@ -3292,12 +3502,14 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     ["doneBtn", "resetYes"].forEach((id) => { const el = $(id); if (el) el.addEventListener("click", () => setTimeout(draw, 0)); });
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") draw(); });
     habitRedraw = draw;
+    quickRedraw = renderQuick;
     draw();
   })();
 
 
   renderAll();
   renderFood();
+  renderGoals();
   aiInit();
   // 開啟時：網址 #today 等指定分頁 > 這台裝置上次的分頁 > 今天
   (function () {
