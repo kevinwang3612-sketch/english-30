@@ -442,6 +442,23 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 .more-pt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
 .more-pt > div { flex: 1 1 260px; min-width: 0; }
 
+/* ---- 📰 今日科技新聞 ---- */
+.news { padding: 0; }
+.news-sum { cursor: pointer; display: flex; align-items: baseline; gap: 10px; padding: 12px 16px; list-style: none; }
+.news-sum::-webkit-details-marker { display: none; }
+.news-sum::after { content: "▸"; margin-left: auto; color: var(--muted); flex: none; }
+.news[open] > .news-sum::after { content: "▾"; }
+.news-t { font-weight: 700; font-size: 15px; flex: none; }
+.news-hl { font-size: 13px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.news[open] .news-hl { white-space: normal; }
+.news-body { display: flex; flex-direction: column; gap: 8px; padding: 0 16px 16px; }
+.news-top { font-size: 14px; font-weight: 600; background: var(--accent-soft); border-radius: 10px; padding: 8px 12px; }
+.news-item { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.news-item b { font-size: 15px; line-height: 1.4; }
+.news-item p { font-size: 14px; }
+.news-src { font-size: 12px; color: var(--muted); }
+.news-src a { color: var(--accent); }
+
 /* ---- ⚡ 10 秒打卡 ---- */
 .quick { display: flex; flex-direction: column; gap: 12px; border: 2px solid var(--accent); }
 .quick-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
@@ -537,6 +554,10 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       <div class="quick-block" id="quickEng"></div>
       <div class="quick-block" id="quickRest"></div>
     </section>
+    <details class="panel news" id="newsBox">
+      <summary class="news-sum"><span class="news-t">📰 今日科技新聞</span><span class="news-hl" id="newsHl">載入中…</span></summary>
+      <div class="news-body" id="newsBody"></div>
+    </details>
     <details class="full-today" id="fullToday">
     <summary>看完整內容（運動菜單、三餐細節、週曆、原因）</summary>
     <div class="full-today-body">
@@ -2791,6 +2812,80 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   });
   $("ptOpenMore").addEventListener("click", () => { showTab("english"); startTest(); });
 
+  /* ---------- 📰 今日科技新聞 ----------
+     每天由雲端排程整理後存到獨立的 daily-news repo；這裡只讀取並以純文字顯示，連結只接受 https */
+  const NEWS_URL = "https://raw.githubusercontent.com/kevinwang3612-sketch/daily-news/main/news.json";
+  const NEWS_KEY = "eng30-news";   // 這台裝置上最後一次成功讀到的新聞（沒網路時顯示）
+  const NEWS_TOPICS = ["AI / 大模型", "半導體 / 硬體", "大型科技公司"];
+  let newsLoadedAt = 0;
+  function cleanNews(d) {
+    if (!d || typeof d !== "object" || !DATE_RE.test(d.date)) return null;
+    const safeUrl = (u) => { try { const x = new URL(String(u)); return x.protocol === "https:" ? x.href : ""; } catch (e) { return ""; } };
+    const items = (Array.isArray(d.items) ? d.items : []).slice(0, 12)
+      .filter((i) => i && typeof i === "object")
+      .map((i) => ({
+        topic: cStr(i.topic, 20) || "其他", title: cStr(i.title, 120), summary: cStr(i.summary, 400),
+        sources: (Array.isArray(i.sources) ? i.sources : []).slice(0, 4)
+          .map((s) => (s && typeof s === "object" ? { name: cStr(s.name, 40) || "來源", url: safeUrl(s.url) } : null))
+          .filter((s) => s && s.url)
+      }))
+      .filter((i) => i.title);
+    return { date: d.date, highlight: cStr(d.highlight, 200), items: items };
+  }
+  function renderNews(n, emptyMsg) {
+    const hl = $("newsHl"), body = $("newsBody");
+    body.innerHTML = "";
+    if (!n) { hl.textContent = emptyMsg; return; }
+    const stale = n.date !== today();
+    hl.textContent = (stale ? "（" + n.date.slice(5).replace("-", "/") + "）" : "") + (n.highlight || n.items.length + " 則");
+    if (stale) body.appendChild(el("p", "food-note", "今天的新聞還沒更新（每天晚上 9 點前後），先顯示 " + n.date + " 的內容。"));
+    if (n.highlight) body.appendChild(el("p", "news-top", "⭐ 今日重點：" + n.highlight));
+    const topics = NEWS_TOPICS.concat(n.items.map((i) => i.topic).filter((t) => NEWS_TOPICS.indexOf(t) < 0));
+    topics.filter((t, k) => topics.indexOf(t) === k).forEach((t) => {
+      const list = n.items.filter((i) => i.topic === t);
+      if (!list.length) return;
+      body.appendChild(el("p", "fgroup-t", t));
+      list.forEach((i) => {
+        const card = el("div", "news-item");
+        card.appendChild(el("b", "", i.title));
+        if (i.summary) card.appendChild(el("p", "", i.summary));
+        if (i.sources.length) {
+          const src = el("p", "news-src");
+          i.sources.forEach((s, k) => {
+            if (k) src.appendChild(document.createTextNode("・"));
+            const a = el("a", "", s.name);
+            a.href = s.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+            src.appendChild(a);
+          });
+          card.appendChild(src);
+        }
+        body.appendChild(card);
+      });
+    });
+    body.appendChild(el("p", "food-note", "更新日期 " + n.date + "・每天由排程自動整理。"));
+  }
+  async function loadNews() {
+    newsLoadedAt = Date.now();
+    let cached = null;
+    try { cached = cleanNews(JSON.parse(localStorage.getItem(NEWS_KEY) || "null")); } catch (e) {}
+    if (cached) renderNews(cached);
+    try {
+      const r = await fetch(NEWS_URL + "?t=" + Math.floor(Date.now() / 300000), { cache: "no-store" });
+      if (!r.ok) throw new Error("http " + r.status);
+      const d = cleanNews(await r.json());
+      if (!d) throw new Error("bad");
+      try { localStorage.setItem(NEWS_KEY, JSON.stringify(d)); } catch (e) {}
+      renderNews(d);
+    } catch (e) {
+      if (cached) return;
+      // Artifact 頁面不能連到外部網站；GitHub 網站則可能是新聞還沒送來
+      renderNews(null, window.claude ? "新聞會顯示在主畫面的「每日打卡」App 裡" : "今天的新聞還沒更新（每天晚上 9 點前後）");
+    }
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && Date.now() - newsLoadedAt > 10 * 60 * 1000) loadNews();
+  });
+
   /* ---------- 🎯 目標開關（在「更多」） ---------- */
   const GOAL_LIST = [
     ["soak", "🦶 泡腳", "放鬆類，可以邊泡腳邊聽英文"],
@@ -3510,6 +3605,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
   renderAll();
   renderFood();
   renderGoals();
+  loadNews();
   aiInit();
   // 開啟時：網址 #today 等指定分頁 > 這台裝置上次的分頁 > 今天
   (function () {
