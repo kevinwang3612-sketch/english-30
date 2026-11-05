@@ -2837,7 +2837,8 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     body.innerHTML = "";
     if (!n) { hl.textContent = emptyMsg; return; }
     const stale = n.date !== today();
-    hl.textContent = (stale ? "（" + n.date.slice(5).replace("-", "/") + "）" : "") + (n.highlight || n.items.length + " 則");
+    const md = n.date.slice(5).split("-").map(Number).join("/");
+    hl.textContent = (stale ? "（舊）" : "") + md + "・" + n.items.length + " 則｜" + (n.highlight || "");
     if (stale) body.appendChild(el("p", "food-note", "今天的新聞還沒更新（每天晚上 9 點前後），先顯示 " + n.date + " 的內容。"));
     if (n.highlight) body.appendChild(el("p", "news-top", "⭐ 今日重點：" + n.highlight));
     const topics = NEWS_TOPICS.concat(n.items.map((i) => i.topic).filter((t) => NEWS_TOPICS.indexOf(t) < 0));
