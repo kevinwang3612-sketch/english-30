@@ -480,6 +480,8 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 .quick-block { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 .quick-block:empty { display: none; }
 .quick-line { font-size: 14px; font-variant-numeric: tabular-nums; flex: 1 1 220px; min-width: 0; }
+.pair-note { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.pair-ok { color: var(--accent); font-weight: 700; }
 .quick-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .full-today > summary {
   cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted);
@@ -550,6 +552,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
         <div class="habit-streak"><b id="quickStreak">0</b><span>天連續有做</span></div>
       </div>
       <div class="quick-tasks" id="quickTasks"></div>
+      <div class="quick-block" id="quickPair"></div>
       <div class="quick-block" id="quickMeals"></div>
       <div class="quick-block" id="quickEng"></div>
       <div class="quick-block" id="quickRest"></div>
@@ -586,6 +589,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
     <div class="habit-mode"><button class="btn small" id="habitMode" type="button"></button><p id="habitModeNote" hidden></p></div>
     <div class="todo-head" id="habitTodoHead"></div>
     <div class="habit-tasks" id="habitTasks"></div>
+    <p class="pair-note" id="habitPair" hidden></p>
     <div class="hwork" id="habitWork"></div>
     <div class="hmeals" id="habitMeals"></div>
     <div class="habit-extras" id="habitExtras"></div>
@@ -2889,10 +2893,10 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 
   /* ---------- 🎯 目標開關（在「更多」） ---------- */
   const GOAL_LIST = [
-    ["soak", "🦶 泡腳", "放鬆類，可以邊泡腳邊聽英文"],
+    ["soak", "🦶 泡腳", "跟運動都開的話：二選一，做一件就算完成"],
     ["meals", "🍽 三餐紀錄與蛋白質", "晚上一鍵「三餐照平常」補記"],
     ["eng", "📖 英文跟讀", "累的時候練 1 張也算"],
-    ["ex", "💪 運動", "週一三五的運動菜單，沒做會順延"]
+    ["ex", "💪 運動", "週一三五菜單，沒做會順延；跟泡腳二選一就算完成"]
   ];
   function renderGoals() {
     const box = $("goalList");
@@ -3197,9 +3201,9 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       if (!cfg || !(isWk(sel) || mode(sel) === "on" || any(sel))) return;
       const id = kOf(sel);
       const todo = (H[id] && H[id].todo) || {};
-      const coreDone = activeTasks().filter((t) => val(sel, t.k)).length;
+      const cc = coreCount(sel);
       const xDone = cfg.x.filter((e) => todo[e[0]]).length;
-      const total = activeTasks().length + cfg.x.length, done = coreDone + xDone;
+      const total = cc[1] + cfg.x.length, done = cc[0] + xDone;
       const isToday = id === kOf(TODAY);
       head.innerHTML = '<div class="row"><h4>' + (mode(sel) === "off" ? "選做（不計入連續天數）" : isToday ? "今天要完成" : "這天要完成") + '</h4><span class="todo-prog">' + done + " / " + total + (done === total ? " 全部完成" : "") + "</span></div>" +
         (mode(sel) === "on" ? '<p class="todo-order">順序：' + cfg.o + "</p>" + (cfg.tip ? '<p class="todo-order">' + cfg.tip + "</p>" : "") : "");
@@ -3287,7 +3291,7 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       const box = $("habitWhy");
       box.innerHTML = "";
       if (mode(sel) !== "on" || sel > TODAY) return;
-      const miss = activeTasks().filter((t) => !val(sel, t.k));
+      const miss = activeTasks().filter((t) => !val(sel, t.k) && !(pairOn() && (t.k === "ex" || t.k === "soak") && pairDone(sel)));
       if (!miss.length) return;
       const id = kOf(sel);
       const keyOfWhy = (k) => id + "|" + k;
@@ -3417,6 +3421,27 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
 
     // 只顯示「更多 → 現在要顧的目標」有開啟的習慣
     const activeTasks = () => TASKS.filter((t) => goalOn(t.k));
+    // 泡腳和運動都開的時候是「二選一」：做其中一件就算完成，另一件是加分
+    const pairOn = () => goalOn("ex") && goalOn("soak");
+    const pairDone = (d) => val(d, "ex") || val(d, "soak");
+    // 核心打卡進度（二選一算成一項）
+    function coreCount(d) {
+      const act = activeTasks();
+      if (!pairOn()) return [act.filter((t) => val(d, t.k)).length, act.length];
+      const rest = act.filter((t) => t.k !== "ex" && t.k !== "soak");
+      return [rest.filter((t) => val(d, t.k)).length + (pairDone(d) ? 1 : 0), rest.length + 1];
+    }
+    // 這週（週一到今天）運動了幾天
+    function weekEx() {
+      let n = 0;
+      for (let d = monOf(TODAY); d <= TODAY; d = add(d, 1)) if (val(d, "ex")) n++;
+      return n;
+    }
+    function pairText(d) {
+      if (val(d, "ex") && val(d, "soak")) return "⭐ 運動＋泡腳都做了，加分啦！";
+      if (pairDone(d)) return "✓ 二選一完成啦～另一件想做再做，是加分 ⭐";
+      return "🦶💪 泡腳、運動二選一，做一件就算完成喔";
+    }
     function toggleTask(id, k) {
       if (k === "eng" && engAuto(id) && !(H[id] && H[id].eng)) { toast("跟讀卡已標記完成，英文會自動算做完成"); return; }
       H[id] = H[id] || {};
@@ -3456,6 +3481,15 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
         });
         box.appendChild(b);
       });
+
+      const pb = $("quickPair"); pb.innerHTML = "";
+      if (pairOn()) {
+        const ok = pairDone(TODAY);
+        pb.appendChild(el("p", "quick-line" + (ok ? " pair-ok" : ""), pairText(TODAY)));
+        const n = weekEx();
+        if (n < 3) pb.appendChild(el("p", "pair-note", "💪 這週運動 " + n + "/3 次" + (!ok && md === "on" ? "，今天選運動？" : "")));
+        else pb.appendChild(el("p", "pair-note", "💪 這週運動 " + n + " 次，達標啦 🎉"));
+      }
 
       const mb = $("quickMeals"); mb.innerHTML = "";
       if (goalOn("meals")) {
@@ -3554,6 +3588,10 @@ code.id { font-size: 12px; background: var(--surface); padding: 1px 6px; border-
       } else {
         tasks.innerHTML = '<p style="color:var(--muted);font-size:13px">週末完全放空，或當作補課日。有值班的話，按上面的按鈕改成照課表做。</p>';
       }
+
+      const hp = $("habitPair");
+      hp.hidden = !(showPlan && pairOn());
+      if (!hp.hidden) { hp.textContent = pairText(sel); hp.classList.toggle("pair-ok", pairDone(sel)); }
 
       const wk = $("habitWeek"); wk.innerHTML = "";
       const mon = monOf(sel);
